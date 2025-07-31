@@ -36,7 +36,7 @@ Target Users: Global users with Nigerian airtime rewards system
   - `user_profiles`: User data including Nigerian status for rewards
   - `quotes`: Inspirational quotes with categories and sources
   - `favorites`: User's saved quotes with JSONB data
-  - `daily_checkins`: 5-click check-in system with 2-minute cooldowns
+  - `daily_checkins`: 10-click check-in system with 1-minute cooldowns
   - `checkin_streaks`: User streak tracking and statistics
   - `rewards`: ₦500 airtime rewards for 30-day Nigerian streaks
   - `reward_claims`: Payout tracking and transaction history

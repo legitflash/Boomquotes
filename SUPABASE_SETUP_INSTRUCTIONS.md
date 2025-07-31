@@ -24,9 +24,9 @@
 - **reward_claims** - Track all reward payouts
 
 ### Daily Check-in Logic
-- Users must click 5 times with 2-minute cooldowns between clicks
+- Users must click 10 times with 1-minute cooldowns between clicks
 - Each click triggers an ad view
-- After 5 clicks, the daily check-in is marked complete
+- After 10 clicks, the daily check-in is marked complete
 - 30 consecutive days = ₦500 airtime reward for Nigerian users
 
 ### Key Functions Created

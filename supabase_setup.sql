@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.daily_checkins (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     checkin_date DATE NOT NULL DEFAULT CURRENT_DATE,
     clicks_completed INTEGER DEFAULT 0,
-    total_clicks_required INTEGER DEFAULT 5,
+    total_clicks_required INTEGER DEFAULT 10,
     is_completed BOOLEAN DEFAULT FALSE,
     last_click_at TIMESTAMP WITH TIME ZONE,
     can_click_next_at TIMESTAMP WITH TIME ZONE,
@@ -198,7 +198,7 @@ BEGIN
         RETURNING * INTO v_checkin_record;
     END IF;
     
-    -- Check if user can click (2 minute cooldown)
+    -- Check if user can click (1 minute cooldown)
     IF v_checkin_record.can_click_next_at IS NULL OR NOW() >= v_checkin_record.can_click_next_at THEN
         v_can_click := TRUE;
     END IF;
@@ -234,7 +234,7 @@ BEGIN
         clicks_completed = clicks_completed + 1,
         ads_viewed = ads_viewed + 1,
         last_click_at = NOW(),
-        can_click_next_at = NOW() + INTERVAL '2 minutes',
+        can_click_next_at = NOW() + INTERVAL '1 minute',
         is_completed = CASE WHEN clicks_completed + 1 >= total_clicks_required THEN true ELSE false END,
         completed_at = CASE WHEN clicks_completed + 1 >= total_clicks_required THEN NOW() ELSE null END
     WHERE user_id = p_user_id AND checkin_date = CURRENT_DATE
@@ -396,7 +396,7 @@ BEGIN
     RETURN jsonb_build_object(
         'has_checkin_today', FOUND,
         'clicks_completed', COALESCE(v_checkin_record.clicks_completed, 0),
-        'total_clicks_required', COALESCE(v_checkin_record.total_clicks_required, 5),
+        'total_clicks_required', COALESCE(v_checkin_record.total_clicks_required, 10),
         'is_completed', COALESCE(v_checkin_record.is_completed, false),
         'can_click', v_can_click,
         'next_click_at', v_checkin_record.can_click_next_at,

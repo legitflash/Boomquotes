@@ -4,26 +4,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { Clock, Calendar as CalendarIcon, Gift, CheckCircle, Circle, Phone } from "lucide-react";
+import { Clock, Gift, CheckCircle, Phone, Trophy, Target } from "lucide-react";
 
-interface CheckIn {
-  id: string;
-  date: string;
-  click_count: number;
-  completed: boolean;
-  completed_at: string | null;
+interface CheckInStatus {
+  has_checkin_today: boolean;
+  clicks_completed: number;
+  total_clicks_required: number;
+  is_completed: boolean;
+  can_click: boolean;
+  next_click_at: string | null;
+  current_streak: number;
+  total_checkins: number;
+  longest_streak: number;
 }
 
 interface AirtimeReward {
   id: string;
   amount: number;
-  phone: string;
+  phone_number: string;
   status: string;
-  check_in_count: number;
+  checkins_completed: number;
   created_at: string;
 }
 
@@ -31,20 +36,17 @@ export default function DailyCheckIn() {
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
   
-  const [todayCheckIn, setTodayCheckIn] = useState<CheckIn | null>(null);
-  const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>([]);
-  const [clickCount, setClickCount] = useState(0);
-  const [isChecking, setIsChecking] = useState(false);
+  const [checkinStatus, setCheckinStatus] = useState<CheckInStatus | null>(null);
+  const [isClicking, setIsClicking] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [canClick, setCanClick] = useState(true);
-  const [completedDates, setCompletedDates] = useState<Date[]>([]);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
   const [airtimeRewards, setAirtimeRewards] = useState<AirtimeReward[]>([]);
-
-  const today = new Date().toISOString().split('T')[0];
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchCheckInData();
+      fetchCheckinStatus();
       fetchAirtimeRewards();
     }
   }, [user]);
@@ -55,7 +57,7 @@ export default function DailyCheckIn() {
       interval = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
-            setCanClick(true);
+            fetchCheckinStatus(); // Refresh status when cooldown ends
             return 0;
           }
           return prev - 1;
@@ -65,40 +67,96 @@ export default function DailyCheckIn() {
     return () => clearInterval(interval);
   }, [timeRemaining]);
 
-  const fetchCheckInData = async () => {
+  const fetchCheckinStatus = async () => {
     if (!user) return;
 
     try {
-      // Fetch today's check-in
-      const { data: todayData } = await supabase
-        .from('check_ins')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .single();
+      const { data, error } = await supabase.rpc('get_checkin_status', {
+        p_user_id: user.id
+      });
 
-      if (todayData) {
-        setTodayCheckIn(todayData);
-        setClickCount(todayData.click_count || 0);
+      if (error) {
+        console.error('Error fetching checkin status:', error);
+        return;
       }
 
-      // Fetch all check-ins for calendar
-      const { data: allData } = await supabase
-        .from('check_ins')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (allData) {
-        setAllCheckIns(allData);
-        const completed = allData
-          .filter(checkIn => checkIn.completed)
-          .map(checkIn => new Date(checkIn.date + 'T00:00:00'));
-        setCompletedDates(completed);
+      setCheckinStatus(data);
+      
+      // Calculate time remaining if user can't click yet
+      if (data.next_click_at && !data.can_click) {
+        const nextClickTime = new Date(data.next_click_at).getTime();
+        const now = new Date().getTime();
+        const remaining = Math.max(0, Math.ceil((nextClickTime - now) / 1000));
+        setTimeRemaining(remaining);
       }
     } catch (error) {
-      console.error('Error fetching check-in data:', error);
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCheckinClick = async () => {
+    if (!user || isClicking || !checkinStatus?.can_click) return;
+
+    setIsClicking(true);
+
+    try {
+      const { data, error } = await supabase.rpc('handle_checkin_click', {
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error handling checkin click:', error);
+        toast({
+          title: "Error",
+          description: "Failed to process click. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show ad simulation
+      simulateAd();
+
+      // Refresh status to get updated data
+      await fetchCheckinStatus();
+
+      if (data.is_completed) {
+        toast({
+          title: "Check-in Complete! 🎉",
+          description: `You've completed today's check-in! Current streak: ${data.current_streak || checkinStatus.current_streak + 1} days`,
+        });
+        
+        // Check if user is Nigerian and needs to provide phone for 30-day reward
+        if (userProfile?.country === 'NG' && (data.current_streak || checkinStatus.current_streak + 1) >= 30 && !userProfile.phone) {
+          setShowPhoneInput(true);
+        }
+      } else {
+        toast({
+          title: "Ad Watched! 📺",
+          description: `Click ${data.total_clicks_required - data.clicks_completed} more times to complete check-in`,
+        });
+      }
+
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClicking(false);
+    }
+  };
+
+  const simulateAd = () => {
+    // Simulate ad display - in real app, this would trigger actual ad
+    toast({
+      title: "💰 Ad Displayed",
+      description: "Thanks for watching the ad! You've earned your click.",
+    });
   };
 
   const fetchAirtimeRewards = async () => {
@@ -106,7 +164,7 @@ export default function DailyCheckIn() {
 
     try {
       const { data } = await supabase
-        .from('airtime_rewards')
+        .from('rewards')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -119,122 +177,33 @@ export default function DailyCheckIn() {
     }
   };
 
-  const handleClick = async () => {
-    if (!canClick || !user || clickCount >= 3) return;
-
-    setIsChecking(true);
-    setCanClick(false);
-    setTimeRemaining(120); // 2 minutes
+  const handlePhoneSubmit = async () => {
+    if (!phoneNumber || !user) return;
 
     try {
-      const newClickCount = clickCount + 1;
-      const isCompleted = newClickCount >= 3;
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ phone: phoneNumber })
+        .eq('id', user.id);
 
-      if (!todayCheckIn) {
-        // Create new check-in
-        const { data, error } = await supabase
-          .from('check_ins')
-          .insert({
-            user_id: user.id,
-            date: today,
-            click_count: newClickCount,
-            completed: isCompleted,
-            completed_at: isCompleted ? new Date().toISOString() : null,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        setTodayCheckIn(data);
-      } else {
-        // Update existing check-in
-        const { data, error } = await supabase
-          .from('check_ins')
-          .update({
-            click_count: newClickCount,
-            completed: isCompleted,
-            completed_at: isCompleted ? new Date().toISOString() : null,
-          })
-          .eq('id', todayCheckIn.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        setTodayCheckIn(data);
+      if (error) {
+        console.error('Error updating phone:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save phone number. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      setClickCount(newClickCount);
-
-      if (isCompleted) {
-        toast({
-          title: "Daily check-in completed! 🎉",
-          description: "Great job! You've completed today's check-in.",
-        });
-
-        // Check if user has completed 30 check-ins for airtime reward
-        await checkAirtimeEligibility();
-        await fetchCheckInData(); // Refresh data
-      } else {
-        toast({
-          title: `Click ${newClickCount}/3 completed`,
-          description: `${3 - newClickCount} more clicks to complete today's check-in.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error updating check-in:', error);
       toast({
-        title: "Error",
-        description: "Failed to update check-in. Please try again.",
-        variant: "destructive",
+        title: "Phone Number Saved! 📱",
+        description: "Your phone number has been saved for airtime rewards.",
       });
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  const checkAirtimeEligibility = async () => {
-    if (!user || !userProfile?.phone) return;
-
-    try {
-      // Count completed check-ins
-      const { count } = await supabase
-        .from('check_ins')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('completed', true);
-
-      if (count && count >= 30) {
-        // Check if user hasn't already received reward for this milestone
-        const { data: existingReward } = await supabase
-          .from('airtime_rewards')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('check_in_count', 30)
-          .single();
-
-        if (!existingReward) {
-          // Create airtime reward
-          const { error } = await supabase
-            .from('airtime_rewards')
-            .insert({
-              user_id: user.id,
-              amount: 500,
-              phone: userProfile.phone,
-              status: 'pending',
-              check_in_count: 30,
-            });
-
-          if (!error) {
-            toast({
-              title: "🎉 Congratulations! Airtime reward earned!",
-              description: "You've earned ₦500 airtime for completing 30 check-ins!",
-            });
-            await fetchAirtimeRewards();
-          }
-        }
-      }
+      
+      setShowPhoneInput(false);
     } catch (error) {
-      console.error('Error checking airtime eligibility:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -244,222 +213,244 @@ export default function DailyCheckIn() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getCompletedCheckInsCount = () => {
-    return allCheckIns.filter(checkIn => checkIn.completed).length;
+  const getProgressPercentage = () => {
+    if (!checkinStatus) return 0;
+    return (checkinStatus.clicks_completed / checkinStatus.total_clicks_required) * 100;
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800", text: "Processing" },
-      sent: { color: "bg-green-100 text-green-800", text: "Sent" },
-      failed: { color: "bg-red-100 text-red-800", text: "Failed" },
-    };
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge className={config.color}>{config.text}</Badge>;
-  };
+  const canClickNext = checkinStatus?.can_click && !isClicking && !checkinStatus.is_completed;
+  const isNigerian = userProfile?.country === 'NG';
 
-  if (!user) {
-    return <div>Please sign in to access daily check-ins.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading your check-in status...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const completedCount = getCompletedCheckInsCount();
-  const progressToReward = Math.min(completedCount, 30);
-
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Check-In</h1>
-          <p className="text-gray-600">Complete your daily check-in to earn rewards and track your progress.</p>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Daily Check-in</h1>
+          <p className="text-gray-600 text-lg">Click 10 times to complete your daily check-in and earn rewards!</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Main Check-in Card */}
+        <Card className="mb-8 shadow-lg border-0 bg-white">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-2xl flex items-center justify-center gap-2">
+              <Target className="h-6 w-6 text-purple-600" />
+              Today's Check-in Progress
+            </CardTitle>
+            <CardDescription>
+              {checkinStatus?.is_completed ? (
+                <span className="text-green-600 font-semibold">✅ Completed for today!</span>
+              ) : (
+                <span>Click the button below to watch ads and complete your check-in</span>
+              )}
+            </CardDescription>
+          </CardHeader>
           
-          {/* Check-in Section */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Today's Check-In</span>
-                </CardTitle>
-                <CardDescription>
-                  Click the button 3 times with 2-minute intervals to complete your daily check-in.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-center">
-                  <div className="flex justify-center space-x-4 mb-6">
-                    {[1, 2, 3].map((step) => (
-                      <div key={step} className="flex flex-col items-center">
-                        {clickCount >= step ? (
-                          <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
-                        ) : (
-                          <Circle className="h-8 w-8 text-gray-300 mb-2" />
-                        )}
-                        <span className="text-sm text-gray-600">Click {step}</span>
-                      </div>
-                    ))}
-                  </div>
+          <CardContent className="space-y-6">
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Progress</span>
+                <span>{checkinStatus?.clicks_completed || 0} / {checkinStatus?.total_clicks_required || 10} clicks</span>
+              </div>
+              <Progress value={getProgressPercentage()} className="h-3" />
+            </div>
 
-                  <div className="mb-6">
-                    <Button
-                      onClick={handleClick}
-                      disabled={!canClick || clickCount >= 3 || isChecking}
-                      size="lg"
-                      className="w-48 h-16 text-lg font-semibold"
-                    >
-                      {isChecking ? (
-                        "Processing..."
-                      ) : clickCount >= 3 ? (
-                        "✅ Completed!"
-                      ) : (
-                        `Click ${clickCount + 1}/3`
-                      )}
-                    </Button>
-                  </div>
-
-                  {timeRemaining > 0 && (
-                    <div className="flex items-center justify-center space-x-2 text-primary">
-                      <Clock className="h-4 w-4" />
-                      <span>Next click available in: {formatTime(timeRemaining)}</span>
-                    </div>
-                  )}
-
-                  {todayCheckIn?.completed && (
-                    <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                      <p className="text-green-800 font-medium">
-                        🎉 Today's check-in completed!
-                      </p>
-                      <p className="text-green-600 text-sm">
-                        Completed at {new Date(todayCheckIn.completed_at!).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Progress to Reward */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Gift className="h-5 w-5 text-accent" />
-                  <span>Airtime Reward Progress</span>
-                </CardTitle>
-                <CardDescription>
-                  Complete 30 check-ins to earn ₦500 airtime (Nigerian users only)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            {/* Check-in Button */}
+            <div className="text-center">
+              {checkinStatus?.is_completed ? (
                 <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span>{progressToReward}/30 check-ins</span>
-                  </div>
-                  <Progress value={(progressToReward / 30) * 100} className="h-3" />
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                  <p className="text-green-600 font-semibold text-lg">Check-in completed for today! 🎉</p>
+                  <p className="text-gray-600">Come back tomorrow to continue your streak</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    onClick={handleCheckinClick}
+                    disabled={!canClickNext || timeRemaining > 0}
+                    size="lg"
+                    className="px-8 py-6 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  >
+                    {isClicking ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                        Watching Ad...
+                      </>
+                    ) : timeRemaining > 0 ? (
+                      <>
+                        <Clock className="h-5 w-5 mr-2" />
+                        Wait {formatTime(timeRemaining)}
+                      </>
+                    ) : (
+                      <>
+                        <Gift className="h-5 w-5 mr-2" />
+                        Click to Watch Ad
+                      </>
+                    )}
+                  </Button>
                   
-                  {!userProfile?.phone && (
-                    <div className="flex items-start space-x-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <Phone className="h-4 w-4 text-yellow-600 mt-0.5" />
-                      <div className="text-sm text-yellow-800">
-                        <p className="font-medium">Phone number required</p>
-                        <p>Add your phone number to receive airtime rewards.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {progressToReward >= 30 && (
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <p className="text-green-800 font-medium">
-                        🎉 Congratulations! You've earned ₦500 airtime!
-                      </p>
-                    </div>
+                  {timeRemaining > 0 && (
+                    <p className="text-sm text-gray-500">
+                      Next click available in {formatTime(timeRemaining)}
+                    </p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Airtime Rewards History */}
-            {airtimeRewards.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Airtime Rewards</CardTitle>
-                  <CardDescription>Your airtime reward history</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+        {/* Stats Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card className="text-center shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                Current Streak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-600">{checkinStatus?.current_streak || 0}</div>
+              <p className="text-sm text-gray-500">consecutive days</p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                Total Check-ins
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{checkinStatus?.total_checkins || 0}</div>
+              <p className="text-sm text-gray-500">completed</p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-center gap-2">
+                <Target className="h-5 w-5 text-blue-500" />
+                Best Streak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{checkinStatus?.longest_streak || 0}</div>
+              <p className="text-sm text-gray-500">days</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Nigerian Rewards Section */}
+        {isNigerian && (
+          <Card className="mb-8 shadow-lg border-2 border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2 text-green-800">
+                <Gift className="h-6 w-6" />
+                Nigerian Airtime Rewards
+              </CardTitle>
+              <CardDescription className="text-green-700">
+                Complete 30 consecutive check-ins to earn ₦500 airtime!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-green-800 font-medium">Progress to next reward:</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {Math.min(checkinStatus?.current_streak || 0, 30)}/30 days
+                  </Badge>
+                </div>
+                
+                <Progress 
+                  value={Math.min((checkinStatus?.current_streak || 0) / 30 * 100, 100)} 
+                  className="h-3"
+                />
+
+                {(checkinStatus?.current_streak || 0) >= 30 && (
+                  <div className="bg-green-100 p-4 rounded-lg">
+                    <p className="text-green-800 font-semibold mb-2">🎉 Congratulations! You've earned ₦500 airtime!</p>
+                    <p className="text-green-700 text-sm">Your reward will be processed and sent to your phone number.</p>
+                  </div>
+                )}
+
+                {airtimeRewards.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-green-800">Your Rewards:</h4>
                     {airtimeRewards.map((reward) => (
-                      <div key={reward.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div key={reward.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
                         <div>
-                          <p className="font-medium">₦{reward.amount} Airtime</p>
-                          <p className="text-sm text-gray-600">{reward.phone}</p>
-                          <p className="text-xs text-gray-500">
+                          <span className="font-medium">₦{reward.amount}</span>
+                          <span className="text-sm text-gray-500 ml-2">
                             {new Date(reward.created_at).toLocaleDateString()}
-                          </p>
+                          </span>
                         </div>
-                        {getStatusBadge(reward.status)}
+                        <Badge variant={reward.status === 'completed' ? 'default' : 'secondary'}>
+                          {reward.status}
+                        </Badge>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Calendar Section */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CalendarIcon className="h-5 w-5 text-primary" />
-                  <span>Check-In Calendar</span>
-                </CardTitle>
-                <CardDescription>
-                  Track your daily check-in streak
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-primary">{completedCount}</p>
-                      <p className="text-sm text-gray-600">Total Check-ins</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-accent">{30 - progressToReward}</p>
-                      <p className="text-sm text-gray-600">Until Reward</p>
-                    </div>
-                  </div>
-
-                  <Calendar
-                    mode="multiple"
-                    selected={completedDates}
-                    className="rounded-md border"
-                    classNames={{
-                      day_selected: "bg-green-500 text-white hover:bg-green-600",
-                      day_today: "bg-primary text-white",
-                    }}
+        {/* Phone Number Input Modal */}
+        {showPhoneInput && (
+          <Card className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Add Phone Number for Airtime
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Please provide your Nigerian phone number to receive your ₦500 airtime reward.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="e.g., +2348012345678"
+                    className="mt-1"
                   />
-
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded"></div>
-                      <span>Completed check-in</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-primary rounded"></div>
-                      <span>Today</span>
-                    </div>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
+                <div className="flex gap-2">
+                  <Button onClick={handlePhoneSubmit} className="flex-1">
+                    Save Phone Number
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowPhoneInput(false)}>
+                    Skip
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
