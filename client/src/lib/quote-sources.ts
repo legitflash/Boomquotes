@@ -86,10 +86,18 @@ export class QuotableExtendedAPI {
   static async getPopularQuotes(): Promise<ExternalQuote[]> {
     try {
       const response = await fetch(`${this.BASE_URL}/quotes?sortBy=datePopular&limit=20`);
-      if (!response.ok) throw new Error("Quotable popular quotes failed");
+      if (!response.ok) {
+        console.warn('Quotable API response not ok:', response.status);
+        return [];
+      }
       
       const data = await response.json();
-      return (data.results || []).map((quote: any) => ({
+      if (!data.results || !Array.isArray(data.results)) {
+        console.warn('Quotable API returned invalid data structure');
+        return [];
+      }
+      
+      return data.results.map((quote: any) => ({
         content: quote.content,
         author: quote.author,
         tags: quote.tags || [],
@@ -171,16 +179,34 @@ export class QuoteAggregator {
       try {
         switch (source.name) {
           case "quotable":
-            const popularQuotes = await QuotableExtendedAPI.getPopularQuotes();
-            if (popularQuotes.length === 0) throw new Error("No popular quotes available");
-            return popularQuotes[Math.floor(Math.random() * popularQuotes.length)];
+            try {
+              const popularQuotes = await QuotableExtendedAPI.getPopularQuotes();
+              if (popularQuotes.length === 0) {
+                console.warn("No popular quotes available from Quotable");
+                continue;
+              }
+              return popularQuotes[Math.floor(Math.random() * popularQuotes.length)];
+            } catch (error) {
+              console.warn("Quotable source failed:", error);
+              continue;
+            }
           case "zenquotes":
             // Already implemented in main QuotesAPI
             continue;
           case "goquotes":
-            return await GoQuotesAPI.getRandomQuote();
+            try {
+              return await GoQuotesAPI.getRandomQuote();
+            } catch (error) {
+              console.warn("GoQuotes source failed:", error);
+              continue;
+            }
           case "stoicquotes":
-            return await StoicQuotesAPI.getRandomQuote();
+            try {
+              return await StoicQuotesAPI.getRandomQuote();
+            } catch (error) {
+              console.warn("StoicQuotes source failed:", error);
+              continue;
+            }
           default:
             continue;
         }
