@@ -225,21 +225,6 @@ export default function DailyCheckIn() {
     // Button was clicked - check cooldown
     const cooldownEnd = new Date(buttonClick.cooldownUntil);
     return new Date() >= cooldownEnd;
-      
-      // Check if all previous buttons have been clicked and cooled down
-      for (let i = 1; i < buttonNumber; i++) {
-        const prevButtonClick = buttonClicks.find(click => click.buttonNumber === i);
-        if (!prevButtonClick) return false; // Previous button not clicked
-        
-        const prevCooldownEnd = new Date(prevButtonClick.cooldownUntil);
-        if (new Date() < prevCooldownEnd) return false; // Previous button still on cooldown
-      }
-      return true;
-    }
-    
-    // Button was clicked - check cooldown
-    const cooldownEnd = new Date(buttonClick.cooldownUntil);
-    return new Date() >= cooldownEnd;
   };
 
   return (
