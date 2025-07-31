@@ -191,7 +191,55 @@ export default function DailyCheckIn() {
     if (hasClicked) {
       return { disabled: true, label: "✓", variant: "secondary" };
     }
+    
+    // Check if button is available based on sequential order
+    const isAvailable = isButtonAvailable(buttonNum);
+    if (!isAvailable) {
+      return { disabled: true, label: `${buttonNum}`, variant: "ghost" };
+    }
+    
     return { disabled: false, label: `${buttonNum}`, variant: "default" };
+  };
+
+  const isButtonAvailable = (buttonNumber: number): boolean => {
+    if (!todayCheckin) return buttonNumber === 1;
+    
+    const buttonClicks = (todayCheckin.buttonClicks as ButtonClick[]) || [];
+    const buttonClick = buttonClicks.find(click => click.buttonNumber === buttonNumber);
+    
+    if (!buttonClick) {
+      // Button hasn't been clicked yet - check sequential order
+      if (buttonNumber === 1) return true;
+      
+      // Check if all previous buttons have been clicked and cooled down
+      for (let i = 1; i < buttonNumber; i++) {
+        const prevButtonClick = buttonClicks.find(click => click.buttonNumber === i);
+        if (!prevButtonClick) return false; // Previous button not clicked
+        
+        const prevCooldownEnd = new Date(prevButtonClick.cooldownUntil);
+        if (new Date() < prevCooldownEnd) return false; // Previous button still on cooldown
+      }
+      return true;
+    }
+    
+    // Button was clicked - check cooldown
+    const cooldownEnd = new Date(buttonClick.cooldownUntil);
+    return new Date() >= cooldownEnd;
+      
+      // Check if all previous buttons have been clicked and cooled down
+      for (let i = 1; i < buttonNumber; i++) {
+        const prevButtonClick = buttonClicks.find(click => click.buttonNumber === i);
+        if (!prevButtonClick) return false; // Previous button not clicked
+        
+        const prevCooldownEnd = new Date(prevButtonClick.cooldownUntil);
+        if (new Date() < prevCooldownEnd) return false; // Previous button still on cooldown
+      }
+      return true;
+    }
+    
+    // Button was clicked - check cooldown
+    const cooldownEnd = new Date(buttonClick.cooldownUntil);
+    return new Date() >= cooldownEnd;
   };
 
   return (
@@ -245,7 +293,7 @@ export default function DailyCheckIn() {
               Check-in Buttons
             </CardTitle>
             <CardDescription>
-              Click each button once. 1-minute cooldown between clicks.
+              Click buttons sequentially (1→2→3...→10). Wait 1 minute between each click for ads and cooldown.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -258,7 +306,7 @@ export default function DailyCheckIn() {
                     key={buttonNum}
                     variant={variant}
                     size="lg"
-                    disabled={disabled || clickButtonMutation.isPending}
+                    disabled={disabled || clickButtonMutation.isPending || !isButtonAvailable(buttonNum)}
                     onClick={() => clickButtonMutation.mutate(buttonNum)}
                     className="h-16 text-lg font-bold"
                   >
@@ -275,9 +323,9 @@ export default function DailyCheckIn() {
             
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>How it works:</strong> Click each numbered button once per day. 
-                After clicking, wait 1 minute before your next click. 
-                Each click shows an ad and counts toward your daily progress.
+                <strong>How it works:</strong> Click buttons in order (1→2→3...→10). 
+                Each click shows an ad and starts a 1-minute cooldown before the next button unlocks. 
+                Complete all 10 for the day to maintain your streak!
               </p>
             </div>
           </CardContent>
