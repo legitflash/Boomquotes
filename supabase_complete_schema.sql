@@ -1,4 +1,4 @@
--- =====================================================
+ -- =====================================================
 -- BOOMQUOTES COMPLETE DATABASE SCHEMA FOR SUPABASE
 -- =====================================================
 -- This script drops all existing tables and recreates them with the latest requirements

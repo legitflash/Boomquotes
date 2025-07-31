@@ -138,12 +138,59 @@ export default function EnhancedProfile() {
       return;
     }
 
+    // Validate required fields
+    if (!phoneNumber.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Phone number is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedCountry) {
+      toast({
+        title: "Missing information", 
+        description: "Please select your country.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!address.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Address is required.",
+        variant: "destructive", 
+      });
+      return;
+    }
+
+    if (!age || parseInt(age) < 13) {
+      toast({
+        title: "Invalid age",
+        description: "Age must be 13 or older.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!gender) {
+      toast({
+        title: "Missing information",
+        description: "Please select your gender.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const profileData = {
       fullName: fullName.trim(),
-      phone: phoneNumber.trim() || undefined,
+      phone: phoneNumber.trim(),
       country: selectedCountry,
-      age: age ? parseInt(age) : undefined,
-      gender: gender || undefined,
+      address: address.trim(),
+      age: parseInt(age),
+      gender: gender,
     };
 
     saveProfileMutation.mutate(profileData);
