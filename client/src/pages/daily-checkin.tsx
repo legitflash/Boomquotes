@@ -134,7 +134,7 @@ export default function DailyCheckIn() {
         }
       } else {
         toast({
-          title: "Points Earned! ⭐",
+          title: "Progress Updated! ⭐",
           description: `Tap ${data.total_clicks_required - data.clicks_completed} more times to complete check-in`,
         });
       }
@@ -152,10 +152,10 @@ export default function DailyCheckIn() {
   };
 
   const showEarningNotification = () => {
-    // Show earning notification - placeholder for ad integration
+    // Show progress notification - placeholder for ad integration
     toast({
-      title: "💰 Points Earned",
-      description: "Great job! You've earned points for this tap.",
+      title: "💰 Check-in Progress",
+      description: "Great job! Your daily check-in is progressing.",
     });
   };
 
@@ -258,7 +258,7 @@ export default function DailyCheckIn() {
               {checkinStatus?.is_completed ? (
                 <span className="text-green-600 font-semibold">✅ Completed for today!</span>
               ) : (
-                <span>Tap the button below to earn points and complete your check-in</span>
+                <span>Tap the button below to confirm your daily check-in</span>
               )}
             </CardDescription>
           </CardHeader>
@@ -292,7 +292,7 @@ export default function DailyCheckIn() {
                     {isClicking ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                        Watching Ad...
+                        Processing...
                       </>
                     ) : timeRemaining > 0 ? (
                       <>
@@ -302,7 +302,7 @@ export default function DailyCheckIn() {
                     ) : (
                       <>
                         <Gift className="h-5 w-5 mr-2" />
-                        Tap to Earn
+                        Tap to Confirm
                       </>
                     )}
                   </Button>
