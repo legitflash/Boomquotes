@@ -77,9 +77,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all messages
   app.get("/api/messages/all", async (req, res) => {
     try {
-      const { getAllMessages } = await import("../messages_data.js");
-      const messages = getAllMessages();
-      res.json(messages);
+      const { getAllMessages } = await import("../messages_comprehensive.js");
+      const allMessages = getAllMessages();
+      const messagesWithIds = allMessages.map((messageText, index) => ({
+        id: `message_${Date.now()}_all_${Math.random().toString(36).substr(2, 9)}`,
+        text: messageText,
+        category: 'all'
+      }));
+      res.json(messagesWithIds);
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
@@ -96,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid category endpoint" });
       }
       
-      const { getCategoryMessages } = await import("../messages_data.js");
+      const { getCategoryMessages } = await import("../messages_comprehensive.js");
       const messages = getCategoryMessages(category);
       
       if (messages.length === 0) {
@@ -114,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/random", async (req, res) => {
     try {
       const { category } = req.query;
-      const { getRandomMessage, getAllMessages } = await import("../messages_data.js");
+      const { getRandomMessage, getAllMessages } = await import("../messages_comprehensive.js");
       
       let randomMessage;
       if (category && category !== 'all') {
@@ -142,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get daily message
   app.get("/api/messages/daily", async (req, res) => {
     try {
-      const { getDailyMessage } = await import("../messages_data.js");
+      const { getDailyMessage } = await import("../messages_comprehensive.js");
       const dailyMessage = getDailyMessage();
       
       if (!dailyMessage) {

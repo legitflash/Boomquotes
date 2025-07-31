@@ -1,7 +1,7 @@
-// Comprehensive quotes expansion with over 100 quotes per category
-// This file extends the existing quotes.js with additional content
+// Comprehensive quotes database with 100+ quotes per category
+// This replaces the simple quotes.js with a full-featured categorized system
 
-const additionalQuotes = {
+const quotes = {
   motivation: [
     // Success & Achievement
     "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill",
@@ -21,11 +21,11 @@ const additionalQuotes = {
     "Success is walking from failure to failure with no loss of enthusiasm. - Winston Churchill",
     "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart. - Roy T. Bennett",
     "The only person you are destined to become is the person you decide to be. - Ralph Waldo Emerson",
-    "Your limitation—it's only your imagination.",
-    "Push yourself, because no one else is going to do it for you.",
-    "Great things never come from comfort zones.",
-    "Dream it. Wish it. Do it.",
-    "Success doesn't just find you. You have to go out and get it.",
+    "Your limitation—it's only your imagination. - Unknown",
+    "Push yourself, because no one else is going to do it for you. - Unknown",
+    "Great things never come from comfort zones. - Unknown",
+    "Dream it. Wish it. Do it. - Unknown",
+    "Success doesn't just find you. You have to go out and get it. - Unknown",
     
     // Self-improvement
     "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -61,7 +61,19 @@ const additionalQuotes = {
     "Courage isn't having the strength to go on - it is going on when you don't have strength. - Napoleon Bonaparte",
     "You are braver than you believe, stronger than you seem, and smarter than you think. - A.A. Milne",
     "The mind is everything. What you think you become. - Buddha",
-    "What doesn't kill you makes you stronger. - Friedrich Nietzsche"
+    "What doesn't kill you makes you stronger. - Friedrich Nietzsche",
+    
+    // Leadership & Vision
+    "A leader is one who knows the way, goes the way, and shows the way. - John C. Maxwell",
+    "The art of leadership is saying no, not saying yes. It is very easy to say yes. - Tony Blair",
+    "Great leaders are willing to sacrifice their own personal interests for the good of the team. - John Wooden",
+    "Leadership is the capacity to translate vision into reality. - Warren Bennis",
+    "Leadership is not a position or a title, it is action and example. - McGannon Staying",
+    "The challenge of leadership is to be strong, but not rude; be kind, but not weak. - Jim Rohn",
+    "Leadership is about making others better as a result of your presence. - Sheryl Sandberg",
+    "If your actions inspire others to dream more, learn more, do more and become more, you are a leader. - John Quincy Adams",
+    "A good leader takes a little more than his share of the blame, a little less than his share of the credit. - Arnold H. Glasow",
+    "Leadership is not about being in charge. It's about taking care of those in your charge. - Simon Sinek"
   ],
   
   love: [
@@ -76,6 +88,16 @@ const additionalQuotes = {
     "I have found the one whom my soul loves. - Song of Solomon 3:4",
     "To love and be loved is to feel the sun from both sides. - David Viscott",
     "Love recognizes no barriers. It jumps hurdles, leaps fences, penetrates walls to arrive at its destination full of hope. - Maya Angelou",
+    "Being someone's first love may be great, but to be their last is beyond perfect. - Unknown",
+    "Love is when the other person's happiness is more important than your own. - H. Jackson Brown Jr.",
+    "The best love is the kind that awakens the soul and makes us reach for more. - Nicholas Sparks",
+    "Love is friendship that has caught fire. - Ann Landers",
+    "A successful marriage requires falling in love many times, always with the same person. - Mignon McLaughlin",
+    "Love does not consist of gazing at each other, but in looking outward together in the same direction. - Antoine de Saint-Exupéry",
+    "True love stories never have endings. - Richard Bach",
+    "If I had a flower for every time I thought of you... I could walk through my garden forever. - Alfred Tennyson",
+    "Love is not something you find. Love is something that finds you. - Loretta Young",
+    "I love you not only for what you are, but for what I am when I am with you. - Roy Croft",
     
     // Self-Love
     "You yourself, as much as anybody in the entire universe, deserve your love and affection. - Buddha",
@@ -88,18 +110,28 @@ const additionalQuotes = {
     "You are enough just as you are. - Meghan Markle",
     "Love yourself first and everything else falls into line. - Lucille Ball",
     "The relationship with yourself sets the tone for every other relationship you have. - Robert Holden",
+    "Self-love, my liege, is not so vile a sin, as self-neglecting. - William Shakespeare",
+    "If you have the ability to love, love yourself first. - Charles Bukowski",
+    "You have to love yourself because no amount of love from others is sufficient to fill the yearning that your soul requires from you. - Dodinsky",
+    "Until you value yourself, you won't value your time. Until you value your time, you will not do anything with it. - M. Scott Peck",
+    "Your task is not to seek for love, but merely to seek and find all the barriers within yourself that you have built against it. - Rumi",
+    "Self-love is not selfish; you cannot truly love another until you know how to love yourself. - Unknown",
+    "The most terrifying thing is to accept oneself completely. - Carl Jung",
+    "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment. - Ralph Waldo Emerson",
+    "You are very powerful, provided you know how powerful you are. - Yogi Bhajan",
+    "Self-care is never a selfish act—it is simply good stewardship of the only gift I have. - Parker Palmer",
     
     // Universal Love
     "Where there is love there is life. - Mahatma Gandhi",
     "Love is the bridge between you and everything. - Rumi",
     "The only thing we never get enough of is love; and the only thing we never give enough of is love. - Henry Miller",
-    "Love is not something you find. Love is something that finds you. - Loretta Young",
-    "Love does not consist of gazing at each other, but in looking outward together in the same direction. - Antoine de Saint-Exupéry",
-    "Being someone's first love may be great, but to be their last is beyond perfect. - Unknown",
-    "Love is when the other person's happiness is more important than your own. - H. Jackson Brown Jr.",
-    "The best love is the kind that awakens the soul and makes us reach for more. - Nicholas Sparks",
-    "Love is friendship that has caught fire. - Ann Landers",
-    "A successful marriage requires falling in love many times, always with the same person. - Mignon McLaughlin",
+    "Love and compassion are necessities, not luxuries. Without them humanity cannot survive. - Dalai Lama",
+    "Spread love everywhere you go. Let no one ever come to you without leaving happier. - Mother Teresa",
+    "A life lived without love is a life half-lived. - Unknown",
+    "Love is a canvas furnished by nature and embroidered by imagination. - Voltaire",
+    "The greatest thing you'll ever learn is just to love and be loved in return. - Eden Ahbez",
+    "Love is the only reality and it is not a mere sentiment. It is the ultimate truth that lies at the heart of creation. - Rabindranath Tagore",
+    "All you need is love. But a little chocolate now and then doesn't hurt. - Charles M. Schulz",
     
     // Family Love
     "Family is not an important thing. It's everything. - Michael J. Fox",
@@ -138,6 +170,16 @@ const additionalQuotes = {
     "Don't worry about failure; you only have to be right once. - Drew Houston",
     "The best time to plant a tree was 20 years ago. The second best time is now. - Chinese Proverb",
     "Entrepreneurship is living a few years of your life like most people won't, so that you can spend the rest of your life like most people can't. - Anonymous",
+    "Every great business is built on friendship. - J.C. Penney",
+    "The value of an idea lies in the using of it. - Thomas Edison",
+    "Business opportunities are like buses, there's always another one coming. - Richard Branson",
+    "I have not failed. I've just found 10,000 ways that won't work. - Thomas Edison",
+    "Success is going from failure to failure without losing your enthusiasm. - Winston Churchill",
+    "The entrepreneur always searches for change, responds to it, and exploits it as an opportunity. - Peter Drucker",
+    "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. - Steve Jobs",
+    "A business has to be involving, it has to be fun, and it has to exercise your creative instincts. - Richard Branson",
+    "The critical ingredient is getting off your butt and doing something. - Nolan Bushnell",
+    "Formal education will make you a living; self-education will make you a fortune. - Jim Rohn",
     
     // Work Ethic
     "Hard work beats talent when talent doesn't work hard. - Tim Notke",
@@ -150,6 +192,16 @@ const additionalQuotes = {
     "The difference between ordinary and extraordinary is that little extra. - Jimmy Johnson",
     "Success isn't just about what you accomplish in your life, it's about what you inspire others to do. - Unknown",
     "Hustle until your haters ask if you're hiring. - Unknown",
+    "I'm a greater believer in luck, and I find the harder I work the more I have of it. - Thomas Jefferson",
+    "There are no shortcuts to any place worth going. - Beverly Sills",
+    "The dictionary is the only place that success comes before work. Hard work is the price we must pay for success. - Vince Lombardi",
+    "Without hard work, nothing grows but weeds. - Gordon B. Hinckley",
+    "Nothing will work unless you do. - Maya Angelou",
+    "Work like there is someone working 24 hours a day to take it away from you. - Mark Cuban",
+    "Talent is cheaper than table salt. What separates the talented individual from the successful one is a lot of hard work. - Stephen King",
+    "I find that the harder I work, the more luck I seem to have. - Thomas Jefferson",
+    "Don't be busy, be productive. - Unknown",
+    "Excellence is never an accident. It is always the result of high intention, sincere effort, and intelligent execution. - Aristotle",
     
     // Business Growth
     "Cash flow is the lifeblood of any business. - Richard Branson",
@@ -162,6 +214,16 @@ const additionalQuotes = {
     "Focus on being productive instead of busy. - Tim Ferriss",
     "Revenue is vanity, profit is sanity, but cash is king. - Unknown",
     "Build something 100 people love, not something 1 million people kind of like. - Brian Chesky",
+    "The way to get started is to quit talking and begin doing. - Walt Disney",
+    "Don't let what you cannot do interfere with what you can do. - John Wooden",
+    "It is better to fail in originality than to succeed in imitation. - Herman Melville",
+    "The road to success and the road to failure are almost exactly the same. - Colin R. Davis",
+    "Success is walking from failure to failure with no loss of enthusiasm. - Winston Churchill",
+    "Try not to become a person of success, but rather try to become a person of value. - Albert Einstein",
+    "Stop chasing the money and start chasing the passion. - Tony Hsieh",
+    "If you really look closely, most overnight successes took a long time. - Steve Jobs",
+    "The function of leadership is to produce more leaders, not more followers. - Ralph Nader",
+    "As we look ahead into the next century, leaders will be those who empower others. - Bill Gates",
     
     // Financial Success
     "An investment in knowledge pays the best interest. - Benjamin Franklin",
@@ -173,19 +235,7 @@ const additionalQuotes = {
     "The real measure of your wealth is how much you'd be worth if you lost all your money. - Anonymous",
     "Money is only a tool. It will take you wherever you wish, but it will not replace you as the driver. - Ayn Rand",
     "Financial peace isn't the acquisition of stuff. It's learning to live on less than you make. - Dave Ramsey",
-    "The best investment you can make is in yourself. - Warren Buffett",
-    
-    // Leadership
-    "A leader is one who knows the way, goes the way, and shows the way. - John C. Maxwell",
-    "Leadership is not about being in charge. It's about taking care of those in your charge. - Simon Sinek",
-    "The art of leadership is saying no, not saying yes. It is very easy to say yes. - Tony Blair",
-    "Great leaders are willing to sacrifice their own personal interests for the good of the team. - John Wooden",
-    "Leadership is the capacity to translate vision into reality. - Warren Bennis",
-    "A good leader takes a little more than his share of the blame, a little less than his share of the credit. - Arnold H. Glasow",
-    "Leadership is not a position or a title, it is action and example. - McGannon Staying",
-    "The challenge of leadership is to be strong, but not rude; be kind, but not weak. - Jim Rohn",
-    "Leadership is about making others better as a result of your presence. - Sheryl Sandberg",
-    "Innovation distinguishes between a leader and a follower. - Steve Jobs"
+    "The best investment you can make is in yourself. - Warren Buffett"
   ],
   
   wisdom: [
@@ -200,8 +250,6 @@ const additionalQuotes = {
     "The good life is one inspired by love and guided by knowledge. - Bertrand Russell",
     "Life isn't about finding yourself. Life is about creating yourself. - George Bernard Shaw",
     "The meaning of life is to find your gift. The purpose of life is to give it away. - Pablo Picasso",
-    
-    // Personal Growth
     "Yesterday is history, tomorrow is a mystery, today is a gift. - Eleanor Roosevelt",
     "The only way to make sense out of change is to plunge into it, move with it, and join the dance. - Alan Watts",
     "What lies behind us and what lies before us are tiny matters compared to what lies within us. - Ralph Waldo Emerson",
@@ -313,19 +361,66 @@ const additionalQuotes = {
   ]
 };
 
-// Export function to merge with existing quotes
-function expandQuotes(existingQuotes) {
-  const expandedQuotes = { ...existingQuotes };
-  
-  Object.keys(additionalQuotes).forEach(category => {
-    if (expandedQuotes[category]) {
-      expandedQuotes[category] = [...expandedQuotes[category], ...additionalQuotes[category]];
-    } else {
-      expandedQuotes[category] = additionalQuotes[category];
-    }
-  });
-  
-  return expandedQuotes;
+// Helper functions
+function getAllQuotes() {
+  return Object.values(quotes).flat();
 }
 
-module.exports = { additionalQuotes, expandQuotes };
+function getQuotesByCategory(category) {
+  if (!category || category === 'all') {
+    return getAllQuotes();
+  }
+  return quotes[category] || [];
+}
+
+function getRandomQuote(category) {
+  const categoryQuotes = category ? getQuotesByCategory(category) : getAllQuotes();
+  if (categoryQuotes.length === 0) return null;
+  
+  const randomIndex = Math.floor(Math.random() * categoryQuotes.length);
+  const quoteText = categoryQuotes[randomIndex];
+  const parts = quoteText.split(' - ');
+  
+  return {
+    id: `quote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    text: parts[0],
+    category: category || 'all',
+    author: parts[1] || 'Unknown'
+  };
+}
+
+function getDailyQuote() {
+  const allQuotes = getAllQuotes();
+  if (allQuotes.length === 0) return null;
+  
+  const today = new Date();
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+  const quoteIndex = dayOfYear % allQuotes.length;
+  const quoteText = allQuotes[quoteIndex];
+  const parts = quoteText.split(' - ');
+  
+  return {
+    id: `daily_quote_${today.toDateString().replace(/\s/g, '_')}`,
+    text: parts[0],
+    category: 'daily',
+    author: parts[1] || 'Unknown'
+  };
+}
+
+function getCategoriesWithCounts() {
+  const categories = {};
+  Object.keys(quotes).forEach(category => {
+    categories[category] = quotes[category].length;
+  });
+  return categories;
+}
+
+// Export all functions
+module.exports = {
+  quotes,
+  getAllQuotes,
+  getQuotesByCategory,
+  getRandomQuote,
+  getDailyQuote,
+  getCategoriesWithCounts
+};

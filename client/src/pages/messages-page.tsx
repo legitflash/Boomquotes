@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Heart, Share2, Download, Search, Shuffle, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QuotePreviewModal } from "@/components/quote-preview-modal";
+import { Header } from "@/components/header";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
@@ -217,9 +218,12 @@ export default function MessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Navigation Header */}
+      <Header />
+      
+      {/* Messages Header */}
       <motion.div 
-        className="bg-white shadow-sm border-b sticky top-0 z-10"
+        className="bg-white shadow-sm border-b sticky top-16 z-10"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
