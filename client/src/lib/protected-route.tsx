@@ -14,10 +14,10 @@ export function ProtectedRoute({
   if (loading) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-neutral-600">Loading...</p>
+            <p className="text-gray-600">Loading...</p>
           </div>
         </div>
       </Route>

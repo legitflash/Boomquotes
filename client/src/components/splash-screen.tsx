@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Quote } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -7,15 +8,19 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onComplete, 300); // Wait for fade out animation
-    }, 2500);
+    // If user is authenticated and app is loaded, skip splash faster
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setTimeout(onComplete, 300); // Wait for fade out animation
+      }, user ? 1000 : 2500); // Shorter delay if user is already signed in
 
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+      return () => clearTimeout(timer);
+    }
+  }, [onComplete, user, loading]);
 
   if (!isVisible) {
     return (

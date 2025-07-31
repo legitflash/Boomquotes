@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, Quote, User, LogOut } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,22 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, userProfile, signOut } = useAuth();
 
+  // Listen for mobile nav close event
+  useEffect(() => {
+    const handleCloseMobileNav = () => {
+      setMobileMenuOpen(false);
+    };
+
+    window.addEventListener('closeMobileNav', handleCloseMobileNav);
+    return () => window.removeEventListener('closeMobileNav', handleCloseMobileNav);
+  }, []);
+
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const getUserInitials = (email: string) => {
@@ -111,12 +125,9 @@ export function Header() {
         </div>
       </header>
 
-      <MobileNav 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)}
-        navItems={navItems}
-        currentLocation={location}
-      />
+      {mobileMenuOpen && (
+        <MobileNav />
+      )}
     </>
   );
 }

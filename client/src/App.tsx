@@ -18,8 +18,23 @@ import QuotePage from "@/pages/quote-page";
 import TermsOfService from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 function Router() {
+  const { user, loading } = useAuth();
+  
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
       <ProtectedRoute path="/" component={Home} />
@@ -40,16 +55,16 @@ function Router() {
 function App() {
   const [showSplash, setShowSplash] = useState(true);
 
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          {showSplash ? (
+            <SplashScreen onComplete={() => setShowSplash(false)} />
+          ) : (
+            <Router />
+          )}
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
