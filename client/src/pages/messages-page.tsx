@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Heart, Share2, Download, Search, Shuffle, MessageCircle } from "lucide-react";
+import { Heart, Share2, Download, Search, Shuffle, MessageCircle, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { QuotePreviewModal } from "@/components/quote-preview-modal";
 import { Header } from "@/components/header";
@@ -304,30 +310,32 @@ export default function MessagesPage() {
             />
           </motion.div>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap gap-2">
-            {messageCategories.map((category) => (
-              <motion.div
-                key={category.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Button
-                  onClick={() => handleCategoryChange(category.id)}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  className={`transition-all duration-300 ${
-                    selectedCategory === category.id 
-                      ? `${category.color} transform shadow-md` 
-                      : "hover:shadow-sm"
-                  }`}
-                  disabled={isTransitioning}
-                >
-                  {category.label}
+          {/* Category Dropdown Filter */}
+          <div className="w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {messageCategories.find(cat => cat.id === selectedCategory)?.label || "Select Category"}
+                  <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
-              </motion.div>
-            ))}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 max-h-60 overflow-y-auto">
+                {messageCategories.map((category) => (
+                  <DropdownMenuItem
+                    key={category.id}
+                    onClick={() => handleCategoryChange(category.id)}
+                    className={selectedCategory === category.id ? "bg-blue-50" : ""}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{category.label}</span>
+                      {selectedCategory === category.id && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </motion.div>

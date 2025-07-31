@@ -395,25 +395,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }));
           allContent.push(...messageContent);
           
-          // Add categorized messages
-          const categories = ['good-morning', 'good-night', 'love', 'romantic', 'sad', 'breakup', 'friendship', 'birthday', 'congratulations', 'encouragement', 'thank-you', 'apology'];
-          for (const cat of categories) {
-            try {
-              const { [`get${cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Messages`]: getMessages } = await import("../messages_comprehensive.js");
-              if (getMessages) {
-                const catMessages = getMessages();
-                const catContent = catMessages.map(msg => ({
-                  id: `msg_${cat}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                  text: msg,
-                  category: cat,
-                  type: 'message',
-                  source: 'Boomquotes Collection'
-                }));
-                allContent.push(...catContent);
-              }
-            } catch (e) {
-              // Category function doesn't exist, skip
-            }
+          // Add categorized messages with expanded content
+          try {
+            const { getExpandedContent } = await import("../server/content-expander.js");
+            const expandedMessages = getExpandedContent('all', 'message', 100);
+            allContent.push(...expandedMessages);
+          } catch (error) {
+            console.error("Error loading expanded messages:", error);
           }
         } catch (error) {
           console.error("Error loading messages:", error);

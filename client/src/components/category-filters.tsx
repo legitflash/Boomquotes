@@ -1,5 +1,11 @@
-import { Shuffle } from "lucide-react";
+import { Shuffle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CategoryFiltersProps {
   activeCategory: string;
@@ -37,21 +43,32 @@ export function CategoryFilters({ activeCategory, onCategoryChange, onRandomQuot
         </Button>
       </div>
       
-      <div className="flex flex-wrap gap-3 mb-8">
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            onClick={() => onCategoryChange(category.id)}
-            className={`px-4 py-2 rounded-full font-medium transition-all ${
-              activeCategory === category.id
-                ? category.color
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-            variant="ghost"
-          >
-            {category.label}
-          </Button>
-        ))}
+      {/* Category Dropdown Filter */}
+      <div className="mb-8">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full max-w-xs justify-between">
+              {categories.find(cat => cat.id === activeCategory)?.label || "Select Category"}
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 max-h-60 overflow-y-auto">
+            {categories.map((category) => (
+              <DropdownMenuItem
+                key={category.id}
+                onClick={() => onCategoryChange(category.id)}
+                className={activeCategory === category.id ? "bg-blue-50" : ""}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span>{category.label}</span>
+                  {activeCategory === category.id && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  )}
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </section>
   );
