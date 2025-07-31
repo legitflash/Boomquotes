@@ -9,11 +9,15 @@ interface CategoryFiltersProps {
 
 const categories = [
   { id: "all", label: "All", color: "category-all" },
-  { id: "motivational", label: "Motivational", color: "category-motivational" },
+  { id: "motivational", label: "Motivation", color: "category-motivational" },
+  { id: "love", label: "Love", color: "category-love" },
+  { id: "hustle", label: "Hustle", color: "category-hustle" },
   { id: "wisdom", label: "Wisdom", color: "category-wisdom" },
-  { id: "funny", label: "Funny", color: "category-funny" },
-  { id: "success", label: "Success", color: "category-success" },
   { id: "life", label: "Life", color: "category-life" },
+  { id: "romantic", label: "Romantic", color: "category-romantic" },
+  { id: "politics", label: "Politics", color: "category-politics" },
+  { id: "social", label: "Social", color: "category-social" },
+  { id: "funny", label: "Funny", color: "category-funny" },
 ];
 
 export function CategoryFilters({ activeCategory, onCategoryChange, onRandomQuote }: CategoryFiltersProps) {

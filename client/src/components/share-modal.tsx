@@ -1,4 +1,4 @@
-import { Facebook, Twitter, Instagram, Link2, X } from "lucide-react";
+import { Facebook, Twitter, Instagram, Link2, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,11 @@ export function ShareModal({ isOpen, onClose, quote }: ShareModalProps) {
     window.open(url, '_blank', 'width=600,height=400');
   };
 
+  const shareToWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n\nShared from BoomQuotes - ${shareUrl}`)}`;
+    window.open(url, '_blank');
+  };
+
   const shareToInstagram = () => {
     // Instagram doesn't have a direct sharing URL, so we'll copy to clipboard
     copyToClipboard();
@@ -37,9 +42,27 @@ export function ShareModal({ isOpen, onClose, quote }: ShareModalProps) {
     });
   };
 
+  const shareNative = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'BoomQuotes',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          copyToClipboard();
+        }
+      }
+    } else {
+      copyToClipboard();
+    }
+  };
+
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(`${shareText}\n\nShared from BoomWheel - ${shareUrl}`);
+      await navigator.clipboard.writeText(`${shareText}\n\nShared from BoomQuotes - ${shareUrl}`);
       toast({
         title: "Copied to clipboard!",
         description: "Quote has been copied to your clipboard.",
@@ -62,7 +85,21 @@ export function ShareModal({ isOpen, onClose, quote }: ShareModalProps) {
           <p className="text-center text-neutral-500">Spread the inspiration</p>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            onClick={shareToWhatsApp}
+            className="flex items-center justify-center p-4 bg-green-500 text-white hover:bg-green-600 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp
+          </Button>
+          <Button
+            onClick={shareToTwitter}
+            className="flex items-center justify-center p-4 bg-black text-white hover:bg-gray-800 transition-colors"
+          >
+            <X className="h-4 w-4 mr-2" />
+            X (Twitter)
+          </Button>
           <Button
             onClick={shareToFacebook}
             className="flex items-center justify-center p-4 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
@@ -71,11 +108,11 @@ export function ShareModal({ isOpen, onClose, quote }: ShareModalProps) {
             Facebook
           </Button>
           <Button
-            onClick={shareToTwitter}
-            className="flex items-center justify-center p-4 bg-blue-400 text-white hover:bg-blue-500 transition-colors"
+            onClick={shareNative}
+            className="flex items-center justify-center p-4 bg-purple-500 text-white hover:bg-purple-600 transition-colors"
           >
-            <Twitter className="h-4 w-4 mr-2" />
-            Twitter
+            <Link2 className="h-4 w-4 mr-2" />
+            Share
           </Button>
           <Button
             onClick={shareToInstagram}

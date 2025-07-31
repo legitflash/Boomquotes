@@ -45,11 +45,13 @@ Target Users: Global users with Nigerian airtime rewards system
 
 ### Quote Management System
 - **Quote Sources**: 
-  - Built-in seed quotes for initial content
+  - Built-in seed quotes for initial content across all categories
   - External API integration (Quotable.io) for expanded quote collection
   - Automatic mapping between external and internal quote formats
-- **Categories**: Motivational, wisdom, funny, success, life quotes
+- **Categories**: Motivation, Love, Hustle, Wisdom, Life, Romantic, Politics, Social, Funny
+- **Random Quote Feature**: External API integration with local fallback
 - **Daily Quote Feature**: Deterministic daily quote selection based on date seed
+- **Share Functionality**: WhatsApp, X (Twitter), Facebook, and native share dialog support
 
 ### User Interface Components
 - **DailyQuoteHero**: Featured daily quote with gradient background
@@ -60,9 +62,10 @@ Target Users: Global users with Nigerian airtime rewards system
 - **MobileNav**: Responsive navigation for mobile devices
 
 ### Favorites System
-- **Local Storage**: Browser-based favorites persistence
-- **Database Integration**: Server-side favorites storage with quote data caching
+- **Server Storage**: In-memory favorites storage with full quote data
+- **Heart Toggle**: One-click favorite/unfavorite functionality
 - **Real-time Updates**: Optimistic updates with TanStack Query mutations
+- **Persistent Storage**: Favorites maintained across user sessions
 
 ## Data Flow
 

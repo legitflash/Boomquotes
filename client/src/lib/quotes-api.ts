@@ -44,19 +44,43 @@ export class QuotesAPI {
       "philosophy": "wisdom",
       "funny": "funny",
       "humor": "funny",
-      "success": "success",
+      "success": "hustle",
+      "business": "hustle",
       "life": "life",
-      "happiness": "life"
+      "happiness": "life",
+      "love": "love",
+      "friendship": "love",
+      "romance": "romantic",
+      "politics": "politics",
+      "government": "politics",
+      "society": "social",
+      "community": "social"
     };
 
-    const category = externalQuote.tags.find(tag => tagToCategoryMap[tag]) 
-      ? tagToCategoryMap[externalQuote.tags.find(tag => tagToCategoryMap[tag])!]
-      : "wisdom";
+    const foundTag = externalQuote.tags.find(tag => tagToCategoryMap[tag.toLowerCase()]);
+    const category = foundTag ? tagToCategoryMap[foundTag.toLowerCase()] : "wisdom";
 
     return {
       text: externalQuote.content,
       author: externalQuote.author,
       category
     };
+  }
+
+  static mapCategoryToTag(category: string): string {
+    // Map our categories to external API tags for fetching
+    const categoryToTagMap: Record<string, string> = {
+      "motivational": "motivational,inspirational",
+      "wisdom": "wisdom,philosophy",
+      "hustle": "success,business",
+      "life": "life,happiness",
+      "funny": "funny,humor",
+      "love": "love,friendship",
+      "romantic": "romance,love",
+      "politics": "politics,government",
+      "social": "society,community"
+    };
+
+    return categoryToTagMap[category] || "wisdom";
   }
 }
