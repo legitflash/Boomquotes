@@ -16,6 +16,7 @@ export default function EnhancedProfile() {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [address, setAddress] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -23,6 +24,7 @@ export default function EnhancedProfile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [canEditPhone, setCanEditPhone] = useState(true);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,8 +41,11 @@ export default function EnhancedProfile() {
         setFullName(profile.fullName || "");
         setPhoneNumber(profile.phone || "");
         setSelectedCountry(profile.country || "");
-        setAge(profile.age || "");
+        setAddress(profile.address || "");
+        setAge(profile.age?.toString() || "");
         setGender(profile.gender || "");
+        // Check if phone has been edited before
+        setCanEditPhone(!profile.phoneEditedAt);
       } else {
         // Auto-detect country for new users
         try {

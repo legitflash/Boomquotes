@@ -8,8 +8,17 @@ import { z } from "zod";
 export const userProfiles = pgTable("user_profiles", {
   id: uuid("id").primaryKey(), // References auth.users.id from Supabase
   email: text("email").notNull(),
-  phone: text("phone"), // Required for Nigerian users for airtime
-  country: text("country").default("NG"), // Nigeria by default
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(), // Required - can only be edited once
+  phoneEditedAt: timestamp("phone_edited_at"), // Track when phone was last edited
+  age: integer("age").notNull(),
+  gender: text("gender").notNull(), // 'male', 'female', 'other'
+  country: text("country").notNull(), // Required country code
+  address: text("address").notNull(), // Required full address
+  referralCode: text("referral_code").notNull(),
+  inviteCode: text("invite_code"), // Optional invite code used during signup
+  totalReferrals: integer("total_referrals").default(0),
+  referralEarnings: integer("referral_earnings").default(0),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });

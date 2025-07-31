@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 Deployment: Vercel with Supabase backend
 Authentication: Supabase Auth with email/password (COMPLETED - working properly)
 Target Users: Global users with airtime rewards system (pending business domain for Reloadly API integration)
-Profile Features: Comprehensive editing with country auto-detection, phone code auto-fill, age, gender, password change
+Profile Features: UPDATED - Required fields: full name, phone (editable once), age, gender, country, address. Country auto-detection, phone code auto-fill, password change, phone edit restriction after first save
 Rewards System: Separate dedicated rewards page with global airtime distribution
 Quote Features: Refreshable daily quotes with download/bookmark functionality, 3 additional categories
 Referral System: Functional tracking with invite codes and bonus rewards

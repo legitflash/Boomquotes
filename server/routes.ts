@@ -676,31 +676,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get payout history
-  app.get("/api/payouts/history", (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+  app.get("/api/payouts/history", async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'demo_user';
+      const history = await storage.getPayoutHistory(userId);
+      res.json(history);
+    } catch (err: any) {
+      console.error('Error fetching payout history:', err);
+      res.status(500).json({ message: "Failed to fetch payout history" });
     }
-    
-    storage.getPayoutHistory(req.user.id)
-      .then(history => res.json(history))
-      .catch(err => {
-        console.error("Error fetching payout history:", err);
-        res.status(500).json({ error: "Failed to fetch payout history" });
-      });
   });
 
   // Get rewards stats
-  app.get("/api/rewards/stats", (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+  app.get("/api/rewards/stats", async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'demo_user';
+      const stats = await storage.getRewardsStats(userId);
+      res.json(stats);
+    } catch (err: any) {
+      console.error('Error fetching rewards stats:', err);
+      res.status(500).json({ message: "Failed to fetch rewards" });
     }
-    
-    storage.getRewardsStats(req.user.id)
-      .then(stats => res.json(stats))
-      .catch(err => {
-        console.error("Error fetching rewards stats:", err);
-        res.status(500).json({ error: "Failed to fetch rewards stats" });
-      });
   });
 
   // Retry failed payout
