@@ -241,39 +241,41 @@ export class QuoteAggregator {
     const shuffledSources = enabledSources.sort(() => Math.random() - 0.5);
 
     const promises = shuffledSources.map(async (source): Promise<ExternalQuote | null> => {
-      try {
-        switch (source.name) {
-          case "quotable":
-            try {
-              const popularQuotes = await QuotableExtendedAPI.getPopularQuotes();
-              if (popularQuotes.length === 0) {
-                return null;
-              }
-              return popularQuotes[Math.floor(Math.random() * popularQuotes.length)];
-            } catch (error) {
-              return null;
-            }
-          case "zenquotes":
-            // Skip for now
-            return null;
-          case "goquotes":
-            try {
-              return await GoQuotesAPI.getRandomQuote();
-            } catch (error) {
-              return null;
-            }
-          case "stoicquotes":
-            try {
-              return await StoicQuotesAPI.getRandomQuote();
-            } catch (error) {
-              return null;
-            }
-          default:
-            return null;
+      return new Promise<ExternalQuote | null>(async (resolve) => {
+        try {
+          switch (source.name) {
+            case "quotable":
+              QuotableExtendedAPI.getPopularQuotes()
+                .then(popularQuotes => {
+                  if (popularQuotes.length === 0) {
+                    resolve(null);
+                  } else {
+                    resolve(popularQuotes[Math.floor(Math.random() * popularQuotes.length)]);
+                  }
+                })
+                .catch(() => resolve(null));
+              break;
+            case "zenquotes":
+              // Skip for now
+              resolve(null);
+              break;
+            case "goquotes":
+              GoQuotesAPI.getRandomQuote()
+                .then(quote => resolve(quote))
+                .catch(() => resolve(null));
+              break;
+            case "stoicquotes":
+              StoicQuotesAPI.getRandomQuote()
+                .then(quote => resolve(quote))
+                .catch(() => resolve(null));
+              break;
+            default:
+              resolve(null);
+          }
+        } catch (error) {
+          resolve(null);
         }
-      } catch (error) {
-        return null;
-      }
+      });
     });
 
     // Wait for all promises to settle and find the first successful one
