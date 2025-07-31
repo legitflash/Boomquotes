@@ -2,11 +2,14 @@
 
 ## Overview
 
-BoomWheel is a modern full-stack web application for discovering, sharing, and managing inspirational quotes. The application features a React frontend with a Node.js Express backend, utilizing PostgreSQL for data persistence. Users can browse quotes by category, view daily quotes, manage favorites, and share quotes across social platforms.
+BoomWheel is a modern full-stack web application for discovering, sharing, and managing inspirational quotes with integrated user authentication and Nigerian-specific rewards system. The application features a React frontend with Supabase authentication, designed for mobile-first usage and deployment on Vercel. Users can browse quotes by category, complete daily check-ins, earn airtime rewards, and share quotes across social platforms.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Deployment: Vercel with Supabase backend
+Authentication: Supabase Auth with email/password
+Target Users: Nigerian users with airtime rewards system
 
 ## System Architecture
 

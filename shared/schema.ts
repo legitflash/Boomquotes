@@ -1,17 +1,17 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, jsonb, integer, timestamp, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, jsonb, integer, timestamp, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  phone: text("phone"), // For Nigerian users
+// User profiles table (extends Supabase auth.users)
+export const userProfiles = pgTable("user_profiles", {
+  id: uuid("id").primaryKey(), // References auth.users.id from Supabase
+  email: text("email").notNull(),
+  phone: text("phone"), // Required for Nigerian users for airtime
   country: text("country").default("NG"), // Nigeria by default
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const quotes = pgTable("quotes", {
@@ -24,15 +24,16 @@ export const quotes = pgTable("quotes", {
 
 export const favorites = pgTable("favorites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").references(() => users.id),
+  userId: uuid("user_id").references(() => userProfiles.id),
   quoteId: text("quote_id").notNull(),
   quoteData: jsonb("quote_data").notNull(), // Store the full quote object
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Daily check-ins table
 export const checkIns = pgTable("check_ins", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => userProfiles.id).notNull(),
   date: text("date").notNull(), // YYYY-MM-DD format
   clickCount: integer("click_count").default(0),
   completed: boolean("completed").default(false),
@@ -42,8 +43,8 @@ export const checkIns = pgTable("check_ins", {
 
 // Airtime rewards table
 export const airtimeRewards = pgTable("airtime_rewards", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => userProfiles.id).notNull(),
   amount: integer("amount").notNull(), // 500 Naira
   phone: text("phone").notNull(),
   status: text("status").default("pending"), // pending, sent, failed
@@ -52,28 +53,28 @@ export const airtimeRewards = pgTable("airtime_rewards", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const userProfilesRelations = relations(userProfiles, ({ many }) => ({
   favorites: many(favorites),
   checkIns: many(checkIns),
   airtimeRewards: many(airtimeRewards),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
-  user: one(users, { fields: [favorites.userId], references: [users.id] }),
+  user: one(userProfiles, { fields: [favorites.userId], references: [userProfiles.id] }),
 }));
 
 export const checkInsRelations = relations(checkIns, ({ one }) => ({
-  user: one(users, { fields: [checkIns.userId], references: [users.id] }),
+  user: one(userProfiles, { fields: [checkIns.userId], references: [userProfiles.id] }),
 }));
 
 export const airtimeRewardsRelations = relations(airtimeRewards, ({ one }) => ({
-  user: one(users, { fields: [airtimeRewards.userId], references: [users.id] }),
+  user: one(userProfiles, { fields: [airtimeRewards.userId], references: [userProfiles.id] }),
 }));
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({
@@ -96,8 +97,8 @@ export const insertAirtimeRewardSchema = createInsertSchema(airtimeRewards).omit
 });
 
 // Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type Quote = typeof quotes.$inferSelect;
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
