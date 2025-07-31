@@ -18,7 +18,6 @@ export default function AuthPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [signupPhone, setSignupPhone] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -46,7 +45,7 @@ export default function AuthPage() {
     }
     setIsLoading(true);
     try {
-      await signUp(signupEmail, signupPassword, signupPhone);
+      await signUp(signupEmail, signupPassword);
     } catch (error) {
       // Error handled in auth context
     } finally {
@@ -70,7 +69,7 @@ export default function AuthPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               Discover inspiring quotes, complete daily check-ins, and earn rewards. 
-              Join thousands getting motivated every day.
+              Join thousands getting motivated every day worldwide.
             </p>
           </div>
           
@@ -86,7 +85,7 @@ export default function AuthPage() {
             </div>
             <div className="flex items-center space-x-3 text-gray-700">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <span>Earn ₦500 airtime after 30 completed check-ins</span>
+              <span>Nigerian users earn ₦500 airtime after 30 check-ins</span>
             </div>
             <div className="flex items-center space-x-3 text-primary font-medium">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
