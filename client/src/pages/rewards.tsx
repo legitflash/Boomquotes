@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, Smartphone, Users, TrendingUp, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Gift, Smartphone, Users, TrendingUp, Clock, CheckCircle, AlertCircle, History, DollarSign, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { motion } from "framer-motion";
 
 interface Reward {
   id: string;
@@ -17,6 +20,22 @@ interface Reward {
   status: 'pending' | 'redeemed' | 'failed';
   createdAt: string;
   description: string;
+}
+
+interface PayoutHistory {
+  id: string;
+  amount: number;
+  currency: string;
+  localAmount: number;
+  localCurrency: string;
+  phone: string;
+  country: string;
+  operatorName: string;
+  status: 'pending' | 'processing' | 'success' | 'failed';
+  transactionId?: string;
+  failureReason?: string;
+  processedAt?: string;
+  createdAt: string;
 }
 
 interface CheckinStats {
@@ -51,6 +70,10 @@ export default function Rewards() {
   // Fetch rewards data
   const { data: rewards = [], isLoading: rewardsLoading } = useQuery<Reward[]>({
     queryKey: ["/api/rewards"],
+  });
+
+  const { data: payoutHistory = [], isLoading: payoutLoading } = useQuery<PayoutHistory[]>({
+    queryKey: ["/api/payouts/history"],
   });
 
   const { data: checkinStats, isLoading: statsLoading } = useQuery<CheckinStats>({

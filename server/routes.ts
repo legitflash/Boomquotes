@@ -287,6 +287,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get payout history
+  app.get("/api/payouts/history", (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    storage.getPayoutHistory(req.user.id)
+      .then(history => res.json(history))
+      .catch(err => {
+        console.error("Error fetching payout history:", err);
+        res.status(500).json({ error: "Failed to fetch payout history" });
+      });
+  });
+
+  // Get rewards stats
+  app.get("/api/rewards/stats", (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    storage.getRewardsStats(req.user.id)
+      .then(stats => res.json(stats))
+      .catch(err => {
+        console.error("Error fetching rewards stats:", err);
+        res.status(500).json({ error: "Failed to fetch rewards stats" });
+      });
+  });
+
+  // Retry failed payout
+  app.post("/api/payouts/:payoutId/retry", (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const { payoutId } = req.params;
+    
+    storage.updatePayoutStatus(payoutId, 'pending')
+      .then(payout => {
+        if (payout) {
+          res.json({ success: true, payout });
+        } else {
+          res.status(404).json({ error: "Payout not found" });
+        }
+      })
+      .catch(err => {
+        console.error("Error retrying payout:", err);
+        res.status(500).json({ error: "Failed to retry payout" });
+      });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

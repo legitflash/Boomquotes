@@ -73,6 +73,11 @@ export interface IStorage {
   // New profile and referral methods
   getUserProfile(userId: string): Promise<UserProfile | null>;
   updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile>;
+  
+  // Payout history methods
+  getPayoutHistory(userId: string): Promise<PayoutHistory[]>;
+  createPayoutRecord(payout: InsertPayoutHistory): Promise<PayoutHistory>;
+  updatePayoutStatus(payoutId: string, status: string, transactionId?: string, failureReason?: string): Promise<PayoutHistory | null>;
   getCheckinStats(userId: string): Promise<any>;
   getRewards(userId: string): Promise<any[]>;
   redeemRewards(userId: string): Promise<any>;
@@ -489,6 +494,102 @@ export class DatabaseStorage implements IStorage {
       pendingReferrals: 0,
       totalEarnings: 0,
       recentReferrals: []
+    };
+  }
+
+  // Payout history methods
+  async getPayoutHistory(userId: string): Promise<PayoutHistory[]> {
+    // Return mock payout history data for demonstration
+    return [
+      {
+        id: `payout_${Date.now()}_1`,
+        userId,
+        amount: 5,
+        currency: 'USD',
+        localAmount: 500,
+        localCurrency: 'NGN',
+        phone: '+234123456789',
+        country: 'NG',
+        operatorName: 'MTN Nigeria',
+        status: 'success',
+        transactionId: 'TXN_123456789',
+        retryCount: 0,
+        processedAt: new Date(Date.now() - 86400000).toISOString(),
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: `payout_${Date.now()}_2`,
+        userId,
+        amount: 5,
+        currency: 'USD',
+        localAmount: 500,
+        localCurrency: 'NGN',
+        phone: '+234123456789',
+        country: 'NG',
+        operatorName: 'Airtel Nigeria',
+        status: 'pending',
+        retryCount: 0,
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      },
+      {
+        id: `payout_${Date.now()}_3`,
+        userId,
+        amount: 5,
+        currency: 'USD',
+        localAmount: 500,
+        localCurrency: 'NGN',
+        phone: '+234123456789',
+        country: 'NG',
+        operatorName: 'Glo Nigeria',
+        status: 'failed',
+        failureReason: 'Insufficient operator balance',
+        retryCount: 1,
+        createdAt: new Date(Date.now() - 7200000).toISOString()
+      }
+    ];
+  }
+
+  async createPayoutRecord(payout: InsertPayoutHistory): Promise<PayoutHistory> {
+    const newPayout: PayoutHistory = {
+      id: `payout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...payout,
+      currency: payout.currency || 'USD',
+      retryCount: payout.retryCount || 0,
+      createdAt: new Date().toISOString()
+    };
+    return newPayout;
+  }
+
+  async updatePayoutStatus(payoutId: string, status: string, transactionId?: string, failureReason?: string): Promise<PayoutHistory | null> {
+    // Mock implementation - in real app this would update the database
+    return {
+      id: payoutId,
+      userId: 'mock_user',
+      amount: 5,
+      currency: 'USD',
+      phone: '+234123456789',
+      country: 'NG',
+      status: status as any,
+      transactionId,
+      failureReason,
+      retryCount: 0,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async getRewardsStats(userId: string): Promise<any> {
+    const checkinStats = await this.getCheckinStats(userId);
+    const referralStats = await this.getReferralStats(userId);
+    const payoutHistory = await this.getPayoutHistory(userId);
+    
+    return {
+      totalEarnings: 15, // Mock total
+      pendingPayouts: payoutHistory.filter(p => p.status === 'pending').length,
+      successfulPayouts: payoutHistory.filter(p => p.status === 'success').length,
+      failedPayouts: payoutHistory.filter(p => p.status === 'failed').length,
+      currentStreak: checkinStats.currentStreak,
+      nextRewardAt: 30,
+      totalReferrals: referralStats.totalReferrals
     };
   }
 }

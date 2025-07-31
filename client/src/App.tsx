@@ -13,7 +13,7 @@ import DailyCheckIn from "@/pages/daily-checkin";
 import EnhancedProfile from "@/pages/enhanced-profile";
 import Bookmarks from "@/pages/bookmarks";
 import Invite from "@/pages/invite";
-import Rewards from "@/pages/rewards";
+import EnhancedRewards from "@/pages/enhanced-rewards";
 import QuotePage from "@/pages/quote-page";
 import TermsOfService from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
@@ -28,7 +28,7 @@ function Router() {
       <ProtectedRoute path="/profile" component={EnhancedProfile} />
       <ProtectedRoute path="/bookmarks" component={Bookmarks} />
       <ProtectedRoute path="/invite" component={Invite} />
-      <ProtectedRoute path="/rewards" component={Rewards} />
+      <ProtectedRoute path="/rewards" component={EnhancedRewards} />
       <ProtectedRoute path="/quote" component={QuotePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/terms" component={TermsOfService} />

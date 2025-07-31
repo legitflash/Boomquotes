@@ -1,468 +1,366 @@
--- ================================================
--- BOOMQUOTES COMPREHENSIVE DATABASE MIGRATION
--- Global Airtime Rewards System with Enhanced Features
--- ================================================
+-- COMPREHENSIVE SUPABASE MIGRATION FOR BOOMQUOTES
+-- This migration includes all features: quotes, messages, users, rewards, payouts, referrals, check-ins
+-- Drop existing tables and create fresh schema with all enhancements
 
--- Enable UUID extension if not already enabled
+-- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ================================================
--- ENHANCED USER PROFILES TABLE
--- ================================================
+-- Drop existing tables (if any) to start fresh
+DROP TABLE IF EXISTS payout_history CASCADE;
+DROP TABLE IF EXISTS referrals CASCADE;
+DROP TABLE IF EXISTS airtime_rewards CASCADE;
+DROP TABLE IF EXISTS checkin_streaks CASCADE;
+DROP TABLE IF EXISTS check_ins CASCADE;
+DROP TABLE IF EXISTS favorites CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS quotes CASCADE;
+DROP TABLE IF EXISTS user_profiles CASCADE;
 
--- Drop existing table if exists to recreate with new structure
-DROP TABLE IF EXISTS public.user_profiles CASCADE;
-
-CREATE TABLE public.user_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT NOT NULL,
-    full_name TEXT,
-    phone TEXT,
-    country TEXT DEFAULT 'NG',
-    age INTEGER CHECK (age >= 13 AND age <= 120),
-    gender TEXT CHECK (gender IN ('male', 'female', 'other', 'prefer-not-to-say')),
-    phone_change_count INTEGER DEFAULT 0 CHECK (phone_change_count <= 1),
-    invite_code TEXT UNIQUE,
-    referred_by TEXT REFERENCES public.user_profiles(invite_code),
-    profile_locked BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- User profiles table (extends Supabase auth.users)
+CREATE TABLE user_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  phone TEXT,
+  country TEXT DEFAULT 'US',
+  age INTEGER,
+  gender TEXT,
+  profile_locked BOOLEAN DEFAULT FALSE,
+  phone_edit_count INTEGER DEFAULT 0,
+  referral_code TEXT UNIQUE,
+  is_nigerian BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- QUOTES TABLE WITH EXPANDED CATEGORIES
--- ================================================
-
--- Drop and recreate quotes table
-DROP TABLE IF EXISTS public.quotes CASCADE;
-
-CREATE TABLE public.quotes (
-    id TEXT PRIMARY KEY DEFAULT ('quote_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    text TEXT NOT NULL,
-    author TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN (
-        'motivation', 'love', 'hustle', 'wisdom', 'life', 
-        'romantic', 'politics', 'social', 'funny', 
-        'success', 'inspiration', 'mindfulness'
-    )),
-    source TEXT DEFAULT 'builtin',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Quotes table
+CREATE TABLE quotes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  text TEXT NOT NULL,
+  author TEXT NOT NULL,
+  category TEXT NOT NULL,
+  source TEXT DEFAULT 'builtin',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- FAVORITES/BOOKMARKS TABLE
--- ================================================
-
--- Drop and recreate favorites table
-DROP TABLE IF EXISTS public.favorites CASCADE;
-
-CREATE TABLE public.favorites (
-    id TEXT PRIMARY KEY DEFAULT ('fav_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    quote_id TEXT NOT NULL,
-    quote_data JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, quote_id)
+-- Messages table for dedicated messages page
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  text TEXT NOT NULL,
+  author TEXT NOT NULL,
+  category TEXT NOT NULL,
+  source TEXT DEFAULT 'builtin',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- DAILY CHECK-INS SYSTEM (10-BUTTON)
--- ================================================
-
--- Drop and recreate check-ins table
-DROP TABLE IF EXISTS public.check_ins CASCADE;
-
-CREATE TABLE public.check_ins (
-    id TEXT PRIMARY KEY DEFAULT ('checkin_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    date TEXT NOT NULL, -- YYYY-MM-DD format
-    button_clicks JSONB DEFAULT '[]'::jsonb,
-    click_count INTEGER DEFAULT 0,
-    completed BOOLEAN DEFAULT FALSE,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    ads_shown INTEGER DEFAULT 0,
-    last_click_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, date)
+-- Favorites table for bookmarked quotes/messages
+CREATE TABLE favorites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
+  quote_id TEXT NOT NULL,
+  quote_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- CHECK-IN STREAKS TABLE
--- ================================================
-
--- Drop and recreate streaks table
-DROP TABLE IF EXISTS public.checkin_streaks CASCADE;
-
-CREATE TABLE public.checkin_streaks (
-    id TEXT PRIMARY KEY DEFAULT ('streak_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE UNIQUE,
-    current_streak INTEGER DEFAULT 0,
-    longest_streak INTEGER DEFAULT 0,
-    last_checkin_date TEXT, -- YYYY-MM-DD format
-    total_days INTEGER DEFAULT 0,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Daily check-ins table with 10-button system
+CREATE TABLE check_ins (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE NOT NULL,
+  date TEXT NOT NULL, -- YYYY-MM-DD format
+  button_clicks JSONB DEFAULT '[]'::jsonb, -- Array of ButtonClick objects
+  click_count INTEGER DEFAULT 0,
+  completed BOOLEAN DEFAULT FALSE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  ads_shown INTEGER DEFAULT 0,
+  last_click_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, date)
 );
 
--- ================================================
--- GLOBAL AIRTIME REWARDS TABLE
--- ================================================
-
--- Drop and recreate airtime rewards table
-DROP TABLE IF EXISTS public.airtime_rewards CASCADE;
-
-CREATE TABLE public.airtime_rewards (
-    id TEXT PRIMARY KEY DEFAULT ('reward_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    amount INTEGER NOT NULL,
-    currency TEXT NOT NULL DEFAULT 'NGN',
-    phone TEXT NOT NULL,
-    country TEXT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'redeemed')),
-    reloadly_transaction_id TEXT,
-    operator_name TEXT,
-    reward_type TEXT DEFAULT 'checkin' CHECK (reward_type IN ('checkin', 'referral')),
-    streak_days INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Check-in streaks table for tracking consecutive days
+CREATE TABLE checkin_streaks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  last_checkin_date TEXT, -- YYYY-MM-DD format
+  total_days INTEGER DEFAULT 0,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- REFERRAL SYSTEM TABLE
--- ================================================
-
--- Drop and recreate referrals table
-DROP TABLE IF EXISTS public.referrals CASCADE;
-
-CREATE TABLE public.referrals (
-    id TEXT PRIMARY KEY DEFAULT ('ref_' || extract(epoch from now()) * 1000 || '_' || substr(gen_random_uuid()::text, 1, 8)),
-    referrer_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    referred_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    referral_code TEXT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'qualified', 'rewarded')),
-    qualified_at TIMESTAMP WITH TIME ZONE,
-    reward_amount INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(referrer_id, referred_id)
+-- Airtime rewards table with enhanced global support
+CREATE TABLE airtime_rewards (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE NOT NULL,
+  amount INTEGER NOT NULL, -- Amount in local currency
+  phone TEXT NOT NULL,
+  country TEXT NOT NULL, -- Country code for Reloadly
+  operator_id TEXT, -- Reloadly operator ID
+  status TEXT DEFAULT 'pending', -- pending, processing, success, failed
+  check_in_count INTEGER NOT NULL, -- 30 check-ins required
+  transaction_id TEXT, -- Reloadly transaction ID
+  failure_reason TEXT, -- Error message if failed
+  processed_at TIMESTAMP WITH TIME ZONE, -- When payout was completed
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================
--- FUNCTIONS FOR AUTOMATIC UPDATES
--- ================================================
+-- Payout history table for tracking all reward transactions
+CREATE TABLE payout_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE NOT NULL,
+  reward_id UUID REFERENCES airtime_rewards(id) ON DELETE SET NULL,
+  amount INTEGER NOT NULL,
+  currency TEXT DEFAULT 'USD', -- USD for global compatibility
+  local_amount INTEGER, -- Amount in local currency
+  local_currency TEXT, -- Local currency code
+  phone TEXT NOT NULL,
+  country TEXT NOT NULL,
+  operator_name TEXT,
+  status TEXT NOT NULL, -- pending, processing, success, failed
+  transaction_id TEXT,
+  failure_reason TEXT,
+  retry_count INTEGER DEFAULT 0,
+  processed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Referral system table
+CREATE TABLE referrals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  referrer_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE NOT NULL,
+  referee_id UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  referral_code TEXT NOT NULL,
+  email TEXT, -- Email of person who signed up
+  status TEXT DEFAULT 'pending', -- pending, completed, invalid
+  bonus_awarded BOOLEAN DEFAULT FALSE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Row Level Security (RLS) Policies
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE check_ins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE checkin_streaks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE airtime_rewards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payout_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
+
+-- User profiles policies
+CREATE POLICY "Users can view own profile" ON user_profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON user_profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile" ON user_profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Quotes policies (public read)
+CREATE POLICY "Anyone can view quotes" ON quotes
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can create quotes" ON quotes
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Messages policies (public read)
+CREATE POLICY "Anyone can view messages" ON messages
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can create messages" ON messages
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Favorites policies
+CREATE POLICY "Users can view own favorites" ON favorites
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own favorites" ON favorites
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own favorites" ON favorites
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Check-ins policies
+CREATE POLICY "Users can view own check-ins" ON check_ins
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own check-ins" ON check_ins
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own check-ins" ON check_ins
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Checkin streaks policies
+CREATE POLICY "Users can view own streaks" ON checkin_streaks
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own streaks" ON checkin_streaks
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own streaks" ON checkin_streaks
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Airtime rewards policies
+CREATE POLICY "Users can view own rewards" ON airtime_rewards
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own rewards" ON airtime_rewards
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Payout history policies
+CREATE POLICY "Users can view own payout history" ON payout_history
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own payout history" ON payout_history
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Referrals policies
+CREATE POLICY "Users can view own referrals" ON referrals
+  FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referee_id);
+
+CREATE POLICY "Users can create referrals" ON referrals
+  FOR INSERT WITH CHECK (auth.uid() = referrer_id);
+
+-- Indexes for performance
+CREATE INDEX idx_quotes_category ON quotes(category);
+CREATE INDEX idx_messages_category ON messages(category);
+CREATE INDEX idx_favorites_user_id ON favorites(user_id);
+CREATE INDEX idx_check_ins_user_date ON check_ins(user_id, date);
+CREATE INDEX idx_checkin_streaks_user_id ON checkin_streaks(user_id);
+CREATE INDEX idx_airtime_rewards_user_id ON airtime_rewards(user_id);
+CREATE INDEX idx_airtime_rewards_status ON airtime_rewards(status);
+CREATE INDEX idx_payout_history_user_id ON payout_history(user_id);
+CREATE INDEX idx_payout_history_status ON payout_history(status);
+CREATE INDEX idx_referrals_referrer_id ON referrals(referrer_id);
+CREATE INDEX idx_referrals_code ON referrals(referral_code);
+CREATE INDEX idx_user_profiles_referral_code ON user_profiles(referral_code);
+
+-- Functions for automatic profile creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, email, referral_code)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    UPPER(SUBSTRING(MD5(NEW.id::text) FROM 1 FOR 8))
+  );
+  
+  -- Initialize checkin streak
+  INSERT INTO public.checkin_streaks (user_id)
+  VALUES (NEW.id);
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger for new user creation
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Function to generate unique invite codes
-CREATE OR REPLACE FUNCTION generate_invite_code()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.invite_code IS NULL THEN
-        NEW.invite_code := 'BOOM' || LPAD(floor(random() * 1000000)::text, 6, '0');
-    END IF;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Triggers for updated_at
+CREATE TRIGGER update_user_profiles_updated_at
+  BEFORE UPDATE ON user_profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to check referral qualification (10+ check-ins)
-CREATE OR REPLACE FUNCTION check_referral_qualification()
-RETURNS TRIGGER AS $$
-DECLARE
-    checkin_count INTEGER;
-    referrer_user_id UUID;
-BEGIN
-    -- Get checkin count for the user
-    SELECT total_days INTO checkin_count
-    FROM checkin_streaks 
-    WHERE user_id = NEW.user_id;
-    
-    -- If user has 10+ checkins, qualify their referrer
-    IF checkin_count >= 10 THEN
-        -- Find the referrer
-        SELECT referred_by INTO referrer_user_id
-        FROM user_profiles 
-        WHERE id = NEW.user_id AND referred_by IS NOT NULL;
-        
-        IF referrer_user_id IS NOT NULL THEN
-            -- Update referral status to qualified
-            UPDATE referrals 
-            SET status = 'qualified', 
-                qualified_at = NOW(),
-                reward_amount = 250  -- ₦250 referral reward
-            WHERE referred_id = NEW.user_id 
-              AND status = 'pending';
-        END IF;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+CREATE TRIGGER update_checkin_streaks_updated_at
+  BEFORE UPDATE ON checkin_streaks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to create airtime reward at 30-day streak
-CREATE OR REPLACE FUNCTION create_streak_reward()
-RETURNS TRIGGER AS $$
-DECLARE
-    user_phone TEXT;
-    user_country TEXT;
-    reward_amount INTEGER;
-    reward_currency TEXT;
-BEGIN
-    -- Check if user reached 30-day streak
-    IF NEW.current_streak >= 30 AND (OLD.current_streak IS NULL OR OLD.current_streak < 30) THEN
-        -- Get user details
-        SELECT phone, country INTO user_phone, user_country
-        FROM user_profiles 
-        WHERE id = NEW.user_id;
-        
-        -- Set reward amount based on country
-        CASE 
-            WHEN user_country = 'NG' THEN 
-                reward_amount := 500;
-                reward_currency := 'NGN';
-            WHEN user_country = 'KE' THEN 
-                reward_amount := 50;
-                reward_currency := 'KES';
-            WHEN user_country = 'IN' THEN 
-                reward_amount := 50;
-                reward_currency := 'INR';
-            WHEN user_country = 'PH' THEN 
-                reward_amount := 50;
-                reward_currency := 'PHP';
-            ELSE 
-                reward_amount := 5;
-                reward_currency := 'USD';
-        END CASE;
-        
-        -- Create airtime reward
-        INSERT INTO airtime_rewards (
-            user_id, amount, currency, phone, country, 
-            reward_type, streak_days
-        ) VALUES (
-            NEW.user_id, reward_amount, reward_currency, user_phone, user_country,
-            'checkin', NEW.current_streak
-        );
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- ================================================
--- TRIGGERS
--- ================================================
-
--- Trigger for updated_at on user_profiles
-CREATE TRIGGER update_user_profiles_updated_at 
-    BEFORE UPDATE ON user_profiles 
-    FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-
--- Trigger for updated_at on checkin_streaks
-CREATE TRIGGER update_checkin_streaks_updated_at 
-    BEFORE UPDATE ON checkin_streaks 
-    FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-
--- Trigger for generating invite codes
-CREATE TRIGGER generate_user_invite_code 
-    BEFORE INSERT ON user_profiles 
-    FOR EACH ROW EXECUTE PROCEDURE generate_invite_code();
-
--- Trigger for checking referral qualification
-CREATE TRIGGER check_referral_qualification_trigger 
-    AFTER UPDATE OF current_streak ON checkin_streaks 
-    FOR EACH ROW EXECUTE PROCEDURE check_referral_qualification();
-
--- Trigger for creating streak rewards
-CREATE TRIGGER create_streak_reward_trigger 
-    AFTER UPDATE OF current_streak ON checkin_streaks 
-    FOR EACH ROW EXECUTE PROCEDURE create_streak_reward();
-
--- ================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ================================================
-
--- Enable RLS on all tables
-ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.quotes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.check_ins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.checkin_streaks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.airtime_rewards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
-
--- User Profiles Policies
-CREATE POLICY "Users can view own profile" ON public.user_profiles
-    FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" ON public.user_profiles
-    FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Users can insert own profile" ON public.user_profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
-
--- Quotes Policies (public read, authenticated write)
-CREATE POLICY "Anyone can view quotes" ON public.quotes
-    FOR SELECT USING (true);
-
-CREATE POLICY "Authenticated users can insert quotes" ON public.quotes
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
--- Favorites Policies
-CREATE POLICY "Users can manage own favorites" ON public.favorites
-    FOR ALL USING (auth.uid() = user_id);
-
--- Check-ins Policies
-CREATE POLICY "Users can manage own check-ins" ON public.check_ins
-    FOR ALL USING (auth.uid() = user_id);
-
--- Streaks Policies
-CREATE POLICY "Users can view own streaks" ON public.checkin_streaks
-    FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own streaks" ON public.checkin_streaks
-    FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own streaks" ON public.checkin_streaks
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Airtime Rewards Policies
-CREATE POLICY "Users can view own rewards" ON public.airtime_rewards
-    FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "System can insert rewards" ON public.airtime_rewards
-    FOR INSERT WITH CHECK (true);
-
--- Referrals Policies
-CREATE POLICY "Users can view own referrals" ON public.referrals
-    FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
-
-CREATE POLICY "System can manage referrals" ON public.referrals
-    FOR ALL USING (true);
-
--- ================================================
--- SEED DATA - EXPANDED QUOTES
--- ================================================
-
--- Insert expanded quotes with new categories
-INSERT INTO public.quotes (text, author, category) VALUES
-
--- MOTIVATION (Enhanced)
+-- Insert sample quotes data
+INSERT INTO quotes (text, author, category) VALUES
 ('The only way to do great work is to love what you do.', 'Steve Jobs', 'motivation'),
-('Innovation distinguishes between a leader and a follower.', 'Steve Jobs', 'motivation'),
-('Your limitation—it''s only your imagination.', 'Unknown', 'motivation'),
-('Great things never come from comfort zones.', 'Unknown', 'motivation'),
-('Dream it. Wish it. Do it.', 'Unknown', 'motivation'),
-('Success doesn''t just find you. You have to go out and get it.', 'Unknown', 'motivation'),
-('The harder you work for something, the greater you''ll feel when you achieve it.', 'Unknown', 'motivation'),
-('Dream bigger. Do bigger.', 'Unknown', 'motivation'),
-('Don''t stop when you''re tired. Stop when you''re done.', 'Unknown', 'motivation'),
-('Wake up with determination. Go to bed with satisfaction.', 'Unknown', 'motivation'),
-
--- SUCCESS (New Category)
-('Success is not final, failure is not fatal: it is the courage to continue that counts.', 'Winston Churchill', 'success'),
-('Success is walking from failure to failure with no loss of enthusiasm.', 'Winston Churchill', 'success'),
-('Don''t be afraid to give up the good to go for the great.', 'John D. Rockefeller', 'success'),
-('Success is not the key to happiness. Happiness is the key to success.', 'Albert Schweitzer', 'success'),
-('The only impossible journey is the one you never begin.', 'Tony Robbins', 'success'),
-('Success is liking yourself, liking what you do, and liking how you do it.', 'Maya Angelou', 'success'),
-
--- INSPIRATION (New Category)
-('What lies behind us and what lies before us are tiny matters compared to what lies within us.', 'Ralph Waldo Emerson', 'inspiration'),
-('The future belongs to those who believe in the beauty of their dreams.', 'Eleanor Roosevelt', 'inspiration'),
-('It is during our darkest moments that we must focus to see the light.', 'Aristotle', 'inspiration'),
-('Believe you can and you''re halfway there.', 'Theodore Roosevelt', 'inspiration'),
-('The only person you are destined to become is the person you decide to be.', 'Ralph Waldo Emerson', 'inspiration'),
-('You are never too old to set another goal or to dream a new dream.', 'C.S. Lewis', 'inspiration'),
-
--- MINDFULNESS (New Category)
-('The present moment is the only time over which we have dominion.', 'Thich Nhat Hanh', 'mindfulness'),
-('Wherever you are, be there totally.', 'Eckhart Tolle', 'mindfulness'),
-('Peace comes from within. Do not seek it without.', 'Buddha', 'mindfulness'),
-('The mind is everything. What you think you become.', 'Buddha', 'mindfulness'),
-('Happiness is not something ready-made. It comes from your own actions.', 'Dalai Lama', 'mindfulness'),
-('You have power over your mind - not outside events. Realize this, and you will find strength.', 'Marcus Aurelius', 'mindfulness'),
-
--- LOVE (Enhanced)
-('Being deeply loved by someone gives you strength, while loving someone deeply gives you courage.', 'Lao Tzu', 'love'),
-('The best thing to hold onto in life is each other.', 'Audrey Hepburn', 'love'),
-('Love is not about how much you say "I love you," but how much you can prove that it''s true.', 'Unknown', 'love'),
-('In all the world, there is no heart for me like yours.', 'Maya Angelou', 'love'),
-('Love is composed of a single soul inhabiting two bodies.', 'Aristotle', 'love'),
-
--- HUSTLE (Enhanced)
-('Hustle until your haters ask if you''re hiring.', 'Steve Harvey', 'hustle'),
-('The dream is free. The hustle is sold separately.', 'Unknown', 'hustle'),
-('Work hard in silence, let your success be your noise.', 'Frank Ocean', 'hustle'),
-('Hustle beats talent when talent doesn''t hustle.', 'Ross Simmonds', 'hustle'),
-('Good things happen to those who hustle.', 'Anais Nin', 'hustle'),
-
--- WISDOM (Enhanced)
-('The only true wisdom is in knowing you know nothing.', 'Socrates', 'wisdom'),
-('In the end, we will remember not the words of our enemies, but the silence of our friends.', 'Martin Luther King Jr.', 'wisdom'),
-('Turn your wounds into wisdom.', 'Oprah Winfrey', 'wisdom'),
-('The way to get started is to quit talking and begin doing.', 'Walt Disney', 'wisdom'),
-
--- LIFE (Enhanced)
 ('Life is what happens to you while you''re busy making other plans.', 'John Lennon', 'life'),
-('The purpose of our lives is to be happy.', 'Dalai Lama', 'life'),
-('Life is really simple, but we insist on making it complicated.', 'Confucius', 'life'),
-('In the end, it''s not the years in your life that count. It''s the life in your years.', 'Abraham Lincoln', 'life'),
+('The future belongs to those who believe in the beauty of their dreams.', 'Eleanor Roosevelt', 'motivation'),
+('In the end, we will remember not the words of our enemies, but the silence of our friends.', 'Martin Luther King Jr.', 'wisdom'),
+('It is during our darkest moments that we must focus to see the light.', 'Aristotle', 'motivation'),
+('Success is not final, failure is not fatal: it is the courage to continue that counts.', 'Winston Churchill', 'motivation'),
+('The only impossible journey is the one you never begin.', 'Tony Robbins', 'motivation'),
+('Love all, trust a few, do wrong to none.', 'William Shakespeare', 'love'),
+('Be yourself; everyone else is already taken.', 'Oscar Wilde', 'wisdom'),
+('Two things are infinite: the universe and human stupidity; and I''m not sure about the universe.', 'Albert Einstein', 'wisdom');
 
--- ROMANTIC (Enhanced)
-('I love you not only for what you are, but for what I am when I am with you.', 'Roy Croft', 'romantic'),
-('You are my today and all of my tomorrows.', 'Leo Christopher', 'romantic'),
-('In your smile, I see something more beautiful than the stars.', 'Beth Revis', 'romantic'),
-('Every love story is beautiful, but ours is my favorite.', 'Unknown', 'romantic'),
+-- Insert sample messages data
+INSERT INTO messages (text, author, category) VALUES
+-- Good Morning Messages
+('Good morning! May your day be filled with positive thoughts, kind people, and happy moments.', 'Anonymous', 'good-morning'),
+('Wake up and make it happen! Today is full of possibilities waiting for you to discover them.', 'Anonymous', 'good-morning'),
+('Good morning sunshine! Remember that every sunrise brings new hope and endless opportunities.', 'Anonymous', 'good-morning'),
+('Rise and shine! Today is a blank canvas - paint it with your brightest colors.', 'Anonymous', 'good-morning'),
+('Good morning! Start your day with a grateful heart and watch how beautiful life becomes.', 'Anonymous', 'good-morning'),
 
--- POLITICS (Enhanced)
-('Injustice anywhere is a threat to justice everywhere.', 'Martin Luther King Jr.', 'politics'),
-('The price of freedom is eternal vigilance.', 'Thomas Jefferson', 'politics'),
-('Democracy is not a spectator sport.', 'Marian Wright Edelman', 'politics'),
-('Change will not come if we wait for some other person or some other time.', 'Barack Obama', 'politics'),
+-- Good Night Messages
+('Good night! May your dreams be peaceful and your sleep be restful. Tomorrow awaits with new adventures.', 'Anonymous', 'good-night'),
+('As the stars light up the night sky, may your dreams be filled with happiness and wonder.', 'Anonymous', 'good-night'),
+('Sleep tight! Let go of today''s worries and embrace the peace that comes with a good night''s rest.', 'Anonymous', 'good-night'),
+('Good night, beautiful soul. May you wake up refreshed and ready to conquer tomorrow.', 'Anonymous', 'good-night'),
+('Close your eyes and drift away to dreamland, where anything is possible and everything is magical.', 'Anonymous', 'good-night'),
 
--- SOCIAL (Enhanced)
-('We make a living by what we get, but we make a life by what we give.', 'Winston Churchill', 'social'),
-('Be the change that you wish to see in the world.', 'Mahatma Gandhi', 'social'),
-('Alone we can do so little; together we can do so much.', 'Helen Keller', 'social'),
-('No one has ever become poor by giving.', 'Anne Frank', 'social'),
+-- Love Messages
+('You are my heart, my soul, my treasure, my today, my tomorrow, my forever, my everything.', 'Anonymous', 'love'),
+('In your eyes, I found my home. In your heart, I found my love. In your soul, I found my mate.', 'Anonymous', 'love'),
+('Love is not about how many days you''ve been together, but how much you love each other every day.', 'Anonymous', 'love'),
+('You are the reason I believe in love, the reason I smile without reason, and the reason I am me.', 'Anonymous', 'love'),
+('True love doesn''t have an ending. It only grows stronger with each passing moment.', 'Anonymous', 'love'),
 
--- FUNNY (Enhanced)
-('I told my wife she was drawing her eyebrows too high. She looked surprised.', 'Unknown', 'funny'),
-('I''m reading a book about anti-gravity. It''s impossible to put down!', 'Unknown', 'funny'),
-('I haven''t slept for ten days, because that would be too long.', 'Mitch Hedberg', 'funny'),
-('The early bird might get the worm, but the second mouse gets the cheese.', 'Unknown', 'funny');
+-- Romantic Messages
+('Every time I see you, I fall in love all over again. You are my forever and always.', 'Anonymous', 'romantic'),
+('You are the poetry I never knew how to write and the song I never knew how to sing.', 'Anonymous', 'romantic'),
+('In a sea of people, my eyes will always search for you. You are my safe harbor, my home.', 'Anonymous', 'romantic'),
+('Your love is like a beautiful melody that plays in my heart every moment of every day.', 'Anonymous', 'romantic'),
+('I choose you today, tomorrow, and every day after that. You are my one and only.', 'Anonymous', 'romantic'),
 
--- ================================================
--- INDEXES FOR PERFORMANCE
--- ================================================
+-- Friendship Messages
+('A true friend is someone who knows all your flaws and loves you anyway. Thank you for being that friend.', 'Anonymous', 'friendship'),
+('Friends are the family we choose for ourselves. I''m grateful to have chosen you.', 'Anonymous', 'friendship'),
+('Good friends are like stars. You don''t always see them, but you know they''re always there.', 'Anonymous', 'friendship'),
+('Friendship isn''t about being inseparable, but about being separated and knowing nothing changes.', 'Anonymous', 'friendship'),
+('A friend is someone who gives you total freedom to be yourself. Thank you for accepting me.', 'Anonymous', 'friendship'),
 
--- Create indexes for better query performance
-CREATE INDEX idx_user_profiles_email ON public.user_profiles(email);
-CREATE INDEX idx_user_profiles_invite_code ON public.user_profiles(invite_code);
-CREATE INDEX idx_user_profiles_referred_by ON public.user_profiles(referred_by);
-CREATE INDEX idx_quotes_category ON public.quotes(category);
-CREATE INDEX idx_favorites_user_id ON public.favorites(user_id);
-CREATE INDEX idx_check_ins_user_date ON public.check_ins(user_id, date);
-CREATE INDEX idx_checkin_streaks_user_id ON public.checkin_streaks(user_id);
-CREATE INDEX idx_airtime_rewards_user_id ON public.airtime_rewards(user_id);
-CREATE INDEX idx_airtime_rewards_status ON public.airtime_rewards(status);
-CREATE INDEX idx_referrals_referrer_id ON public.referrals(referrer_id);
-CREATE INDEX idx_referrals_referred_id ON public.referrals(referred_id);
+-- Birthday Messages
+('Happy Birthday! May this new year of your life be filled with joy, love, and endless adventures.', 'Anonymous', 'birthday'),
+('On your special day, I wish you all the happiness your heart can hold. Happy Birthday!', 'Anonymous', 'birthday'),
+('Another year older, another year wiser, another year more amazing. Happy Birthday to you!', 'Anonymous', 'birthday'),
+('May your birthday be the start of a year filled with good luck, good health, and much happiness.', 'Anonymous', 'birthday'),
+('Happy Birthday! May all your dreams and wishes come true in the year ahead.', 'Anonymous', 'birthday'),
 
--- ================================================
--- COMPLETION MESSAGE
--- ================================================
+-- Encouragement Messages
+('You are stronger than you think, braver than you feel, and more capable than you imagine.', 'Anonymous', 'encouragement'),
+('Don''t give up! Every great accomplishment starts with the decision to keep going.', 'Anonymous', 'encouragement'),
+('Believe in yourself as much as I believe in you. You have the power to overcome anything.', 'Anonymous', 'encouragement'),
+('Difficult roads often lead to beautiful destinations. Keep moving forward!', 'Anonymous', 'encouragement'),
+('You''ve survived 100% of your worst days so far. You''re stronger than you know.', 'Anonymous', 'encouragement'),
 
--- Add a completion marker
-INSERT INTO public.quotes (text, author, category) VALUES 
-('Database migration completed successfully! Global airtime rewards system is now active.', 'Boomquotes System', 'success');
+-- Thank You Messages
+('Thank you for being the reason I smile, the reason I try, and the reason I believe in good people.', 'Anonymous', 'thank-you'),
+('Your kindness has touched my heart in ways you''ll never know. Thank you for being you.', 'Anonymous', 'thank-you'),
+('Gratitude makes sense of our past, brings peace for today, and creates a vision for tomorrow. Thank you!', 'Anonymous', 'thank-you'),
+('Thank you for being a constant source of support, joy, and inspiration in my life.', 'Anonymous', 'thank-you'),
+('Words cannot express how grateful I am for everything you''ve done. Thank you from the bottom of my heart.', 'Anonymous', 'thank-you'),
 
--- Show final status
-SELECT 
-    'MIGRATION COMPLETED SUCCESSFULLY' as status,
-    'Features: Global airtime rewards, Enhanced profiles, 3 new quote categories, Referral system, Phone change limits' as features,
-    'Total countries supported: 170+ via Reloadly API' as coverage,
-    'Ready for global deployment!' as message;
+-- Apology Messages
+('I''m truly sorry for my mistakes. I value our relationship and hope you can forgive me.', 'Anonymous', 'apology'),
+('I sincerely apologize for hurting you. Your feelings matter to me, and I want to make things right.', 'Anonymous', 'apology'),
+('Sorry isn''t just a word - it''s a promise to do better. I promise to learn from this mistake.', 'Anonymous', 'apology'),
+('I was wrong, and I take full responsibility for my actions. Please give me a chance to make amends.', 'Anonymous', 'apology'),
+('Your forgiveness would mean the world to me. I''m sorry for disappointing you.', 'Anonymous', 'apology');
+
+-- Grant necessary permissions
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- Success message
+SELECT 'Boomquotes comprehensive database setup completed successfully!' as message;

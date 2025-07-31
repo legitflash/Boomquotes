@@ -68,10 +68,48 @@ export const checkinStreaks = pgTable("checkin_streaks", {
 export const airtimeRewards = pgTable("airtime_rewards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid("user_id").references(() => userProfiles.id).notNull(),
-  amount: integer("amount").notNull(), // 500 Naira
+  amount: integer("amount").notNull(), // Amount in local currency
   phone: text("phone").notNull(),
-  status: text("status").default("pending"), // pending, sent, failed
-  checkInCount: integer("check_in_count").notNull(), // 30 check-ins
+  country: text("country").notNull(), // Country code for Reloadly
+  operatorId: text("operator_id"), // Reloadly operator ID
+  status: text("status").default("pending"), // pending, processing, success, failed
+  checkInCount: integer("check_in_count").notNull(), // 30 check-ins required
+  transactionId: text("transaction_id"), // Reloadly transaction ID
+  failureReason: text("failure_reason"), // Error message if failed
+  processedAt: timestamp("processed_at"), // When payout was completed
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Payout history table for tracking all reward transactions
+export const payoutHistory = pgTable("payout_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => userProfiles.id).notNull(),
+  rewardId: varchar("reward_id").references(() => airtimeRewards.id),
+  amount: integer("amount").notNull(),
+  currency: text("currency").default("USD"), // USD for global compatibility
+  localAmount: integer("local_amount"), // Amount in local currency
+  localCurrency: text("local_currency"), // Local currency code
+  phone: text("phone").notNull(),
+  country: text("country").notNull(),
+  operatorName: text("operator_name"),
+  status: text("status").notNull(), // pending, processing, success, failed
+  transactionId: text("transaction_id"),
+  failureReason: text("failure_reason"),
+  retryCount: integer("retry_count").default(0),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Referral system table
+export const referrals = pgTable("referrals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referrerId: uuid("referrer_id").references(() => userProfiles.id).notNull(),
+  refereeId: uuid("referee_id").references(() => userProfiles.id),
+  referralCode: text("referral_code").notNull(),
+  email: text("email"), // Email of person who signed up
+  status: text("status").default("pending"), // pending, completed, invalid
+  bonusAwarded: boolean("bonus_awarded").default(false),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -81,6 +119,8 @@ export const userProfilesRelations = relations(userProfiles, ({ many }) => ({
   checkIns: many(checkIns),
   airtimeRewards: many(airtimeRewards),
   checkinStreak: many(checkinStreaks),
+  payoutHistory: many(payoutHistory),
+  referrals: many(referrals),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
@@ -95,8 +135,19 @@ export const checkinStreaksRelations = relations(checkinStreaks, ({ one }) => ({
   user: one(userProfiles, { fields: [checkinStreaks.userId], references: [userProfiles.id] }),
 }));
 
-export const airtimeRewardsRelations = relations(airtimeRewards, ({ one }) => ({
+export const airtimeRewardsRelations = relations(airtimeRewards, ({ one, many }) => ({
   user: one(userProfiles, { fields: [airtimeRewards.userId], references: [userProfiles.id] }),
+  payouts: many(payoutHistory),
+}));
+
+export const payoutHistoryRelations = relations(payoutHistory, ({ one }) => ({
+  user: one(userProfiles, { fields: [payoutHistory.userId], references: [userProfiles.id] }),
+  reward: one(airtimeRewards, { fields: [payoutHistory.rewardId], references: [airtimeRewards.id] }),
+}));
+
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrer: one(userProfiles, { fields: [referrals.referrerId], references: [userProfiles.id] }),
+  referee: one(userProfiles, { fields: [referrals.refereeId], references: [userProfiles.id] }),
 }));
 
 // Insert schemas
@@ -134,11 +185,23 @@ export const insertAirtimeRewardSchema = createInsertSchema(airtimeRewards).omit
   createdAt: true,
 });
 
+export const insertPayoutHistorySchema = createInsertSchema(payoutHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type Quote = typeof quotes.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
@@ -147,6 +210,10 @@ export type CheckinStreak = typeof checkinStreaks.$inferSelect;
 export type InsertCheckinStreak = z.infer<typeof insertCheckinStreakSchema>;
 export type AirtimeReward = typeof airtimeRewards.$inferSelect;
 export type InsertAirtimeReward = z.infer<typeof insertAirtimeRewardSchema>;
+export type PayoutHistory = typeof payoutHistory.$inferSelect;
+export type InsertPayoutHistory = z.infer<typeof insertPayoutHistorySchema>;
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
 
 // API Quote interface for external quotes
 export interface ApiQuote {
