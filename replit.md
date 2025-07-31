@@ -36,10 +36,14 @@ Target Users: Global users with Nigerian airtime rewards system
   - `user_profiles`: User data including Nigerian status for rewards
   - `quotes`: Inspirational quotes with categories and sources
   - `favorites`: User's saved quotes with JSONB data
-  - `daily_checkins`: 10-click check-in system with 1-minute cooldowns
-  - `checkin_streaks`: User streak tracking and statistics
-  - `rewards`: ₦500 airtime rewards for 30-day Nigerian streaks
-  - `reward_claims`: Payout tracking and transaction history
+  - `check_ins`: 10-button daily check-in system with cooldowns and ad tracking
+  - `checkin_streaks`: User streak tracking for consecutive days
+  - `airtime_rewards`: ₦500 rewards for 30 consecutive check-in days
+- **Check-in System**:
+  - 10 buttons per day with individual 1-minute cooldowns
+  - Each click triggers Adsterra Social Bar ad display
+  - Button click tracking with JSONB data for timestamps and cooldowns
+  - Automatic streak calculation and reward generation at 30 days
 
 ## Key Components
 

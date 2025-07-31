@@ -1,4 +1,4 @@
-import { type Quote, type InsertQuote, type Favorite, type InsertFavorite } from "@shared/schema";
+import { type Quote, type InsertQuote, type Favorite, type InsertFavorite, type CheckIn, type CheckinStreak, type AirtimeReward, type ButtonClick } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -12,15 +12,27 @@ export interface IStorage {
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(quoteId: string): Promise<boolean>;
   isFavorite(quoteId: string): Promise<boolean>;
+
+  // Check-in operations
+  getTodayCheckin(userId: string, date: string): Promise<CheckIn | null>;
+  handleButtonClick(userId: string, date: string, buttonNumber: number): Promise<any>;
+  getUserStreak(userId: string): Promise<CheckinStreak | null>;
+  getUserRewards(userId: string): Promise<AirtimeReward[]>;
 }
 
 export class MemStorage implements IStorage {
   private quotes: Map<string, Quote>;
   private favorites: Map<string, Favorite>;
+  private checkins: Map<string, CheckIn>;
+  private streaks: Map<string, CheckinStreak>;
+  private rewards: Map<string, AirtimeReward>;
 
   constructor() {
     this.quotes = new Map();
     this.favorites = new Map();
+    this.checkins = new Map();
+    this.streaks = new Map();
+    this.rewards = new Map();
     this.seedQuotes();
   }
 
@@ -224,6 +236,154 @@ export class MemStorage implements IStorage {
 
   async isFavorite(quoteId: string): Promise<boolean> {
     return this.favorites.has(quoteId);
+  }
+
+  // Check-in operations
+  async getTodayCheckin(userId: string, date: string): Promise<CheckIn | null> {
+    const checkinKey = `${userId}-${date}`;
+    return this.checkins.get(checkinKey) || null;
+  }
+
+  async handleButtonClick(userId: string, date: string, buttonNumber: number): Promise<any> {
+    const checkinKey = `${userId}-${date}`;
+    const now = new Date();
+    const cooldownUntil = new Date(now.getTime() + 60 * 1000); // 1 minute cooldown
+
+    // Get or create today's check-in
+    let checkin = this.checkins.get(checkinKey);
+    if (!checkin) {
+      checkin = {
+        id: randomUUID(),
+        userId,
+        date,
+        buttonClicks: [],
+        clickCount: 0,
+        completed: false,
+        completedAt: null,
+        adsShown: 0,
+        lastClickAt: null,
+        createdAt: now
+      };
+    }
+
+    // Check if button already clicked
+    const buttonClicks = (checkin.buttonClicks as ButtonClick[]) || [];
+    const alreadyClicked = buttonClicks.find(click => click.buttonNumber === buttonNumber);
+    
+    if (alreadyClicked) {
+      // Check cooldown
+      const cooldownEnd = new Date(alreadyClicked.cooldownUntil);
+      if (now < cooldownEnd) {
+        throw new Error(`Button ${buttonNumber} is on cooldown for ${Math.ceil((cooldownEnd.getTime() - now.getTime()) / 1000)} seconds`);
+      }
+    }
+
+    // Add button click
+    const newClick: ButtonClick = {
+      buttonNumber,
+      clickedAt: now.toISOString(),
+      adShown: true,
+      cooldownUntil: cooldownUntil.toISOString()
+    };
+
+    if (alreadyClicked) {
+      // Update existing click
+      const index = buttonClicks.findIndex(click => click.buttonNumber === buttonNumber);
+      buttonClicks[index] = newClick;
+    } else {
+      // Add new click
+      buttonClicks.push(newClick);
+      checkin.clickCount = (checkin.clickCount || 0) + 1;
+    }
+
+    checkin.buttonClicks = buttonClicks;
+    checkin.adsShown = (checkin.adsShown || 0) + 1;
+    checkin.lastClickAt = now;
+
+    // Check if completed (all 10 buttons clicked)
+    if (checkin.clickCount >= 10 && !checkin.completed) {
+      checkin.completed = true;
+      checkin.completedAt = now;
+      
+      // Update streak
+      await this.updateStreak(userId, date);
+    }
+
+    this.checkins.set(checkinKey, checkin);
+
+    return {
+      checkin,
+      buttonClick: newClick,
+      completed: checkin.completed,
+      streak: await this.getUserStreak(userId)
+    };
+  }
+
+  async getUserStreak(userId: string): Promise<CheckinStreak | null> {
+    return this.streaks.get(userId) || {
+      id: randomUUID(),
+      userId,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastCheckinDate: null,
+      totalDays: 0,
+      updatedAt: new Date()
+    };
+  }
+
+  async getUserRewards(userId: string): Promise<AirtimeReward[]> {
+    return Array.from(this.rewards.values()).filter(reward => reward.userId === userId);
+  }
+
+  private async updateStreak(userId: string, date: string): Promise<void> {
+    let streak = this.streaks.get(userId);
+    if (!streak) {
+      streak = {
+        id: randomUUID(),
+        userId,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastCheckinDate: null,
+        totalDays: 0,
+        updatedAt: new Date()
+      };
+    }
+
+    const yesterday = new Date(date);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    if (streak.lastCheckinDate === yesterdayStr) {
+      // Consecutive day
+      streak.currentStreak++;
+    } else if (streak.lastCheckinDate === date) {
+      // Same day, don't increment
+      return;
+    } else {
+      // Reset streak
+      streak.currentStreak = 1;
+    }
+
+    streak.lastCheckinDate = date;
+    streak.totalDays++;
+    streak.longestStreak = Math.max(streak.longestStreak, streak.currentStreak);
+    streak.updatedAt = new Date();
+
+    // Check for 30-day reward
+    if (streak.currentStreak === 30) {
+      const reward: AirtimeReward = {
+        id: randomUUID(),
+        userId,
+        amount: 500, // ₦500
+        phone: '', // Would be filled from user profile
+        status: 'pending',
+        checkInCount: 30,
+        createdAt: new Date()
+      };
+      this.rewards.set(reward.id, reward);
+    }
+
+    this.streaks.set(userId, streak);
   }
 }
 

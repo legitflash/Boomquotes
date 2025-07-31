@@ -163,6 +163,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check-in System Routes
+  
+  // Get today's check-in status
+  app.get("/api/checkins/today", async (req, res) => {
+    try {
+      const userId = "demo-user"; // In real app, get from session
+      const today = new Date().toISOString().split('T')[0];
+      
+      const todayCheckin = await storage.getTodayCheckin(userId, today);
+      const streak = await storage.getUserStreak(userId);
+      
+      res.json({
+        todayCheckin,
+        streak,
+        canCompleteToday: !todayCheckin?.completed,
+        nextRewardAt: 30
+      });
+    } catch (error) {
+      console.error('Error fetching checkin data:', error);
+      res.status(500).json({ message: "Failed to fetch check-in data" });
+    }
+  });
+
+  // Handle button click
+  app.post("/api/checkins/click/:buttonNumber", async (req, res) => {
+    try {
+      const userId = "demo-user"; // In real app, get from session
+      const buttonNumber = parseInt(req.params.buttonNumber);
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (buttonNumber < 1 || buttonNumber > 10) {
+        return res.status(400).json({ message: "Invalid button number" });
+      }
+
+      const result = await storage.handleButtonClick(userId, today, buttonNumber);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error handling button click:', error);
+      res.status(500).json({ message: error.message || "Failed to process click" });
+    }
+  });
+
+  // Get user streak info
+  app.get("/api/checkins/streak/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const streak = await storage.getUserStreak(userId);
+      res.json(streak);
+    } catch (error) {
+      console.error('Error fetching streak:', error);
+      res.status(500).json({ message: "Failed to fetch streak data" });
+    }
+  });
+
+  // Get user rewards
+  app.get("/api/rewards/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const rewards = await storage.getUserRewards(userId);
+      res.json(rewards);
+    } catch (error) {
+      console.error('Error fetching rewards:', error);
+      res.status(500).json({ message: "Failed to fetch rewards" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

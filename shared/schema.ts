@@ -30,15 +30,29 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-// Daily check-ins table
+// Daily check-ins table - Updated for 10-button system
 export const checkIns = pgTable("check_ins", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid("user_id").references(() => userProfiles.id).notNull(),
   date: text("date").notNull(), // YYYY-MM-DD format
+  buttonClicks: jsonb("button_clicks").default(sql`'[]'::jsonb`), // Array of ButtonClick objects
   clickCount: integer("click_count").default(0),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
+  adsShown: integer("ads_shown").default(0),
+  lastClickAt: timestamp("last_click_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Check-in streaks table for tracking consecutive days
+export const checkinStreaks = pgTable("checkin_streaks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => userProfiles.id).notNull().unique(),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastCheckinDate: text("last_checkin_date"), // YYYY-MM-DD format
+  totalDays: integer("total_days").default(0),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Airtime rewards table
@@ -57,6 +71,7 @@ export const userProfilesRelations = relations(userProfiles, ({ many }) => ({
   favorites: many(favorites),
   checkIns: many(checkIns),
   airtimeRewards: many(airtimeRewards),
+  checkinStreak: many(checkinStreaks),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
@@ -65,6 +80,10 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
 
 export const checkInsRelations = relations(checkIns, ({ one }) => ({
   user: one(userProfiles, { fields: [checkIns.userId], references: [userProfiles.id] }),
+}));
+
+export const checkinStreaksRelations = relations(checkinStreaks, ({ one }) => ({
+  user: one(userProfiles, { fields: [checkinStreaks.userId], references: [userProfiles.id] }),
 }));
 
 export const airtimeRewardsRelations = relations(airtimeRewards, ({ one }) => ({
@@ -91,6 +110,11 @@ export const insertCheckInSchema = createInsertSchema(checkIns).omit({
   createdAt: true,
 });
 
+export const insertCheckinStreakSchema = createInsertSchema(checkinStreaks).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export const insertAirtimeRewardSchema = createInsertSchema(airtimeRewards).omit({
   id: true,
   createdAt: true,
@@ -105,6 +129,8 @@ export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
 export type InsertCheckIn = z.infer<typeof insertCheckInSchema>;
+export type CheckinStreak = typeof checkinStreaks.$inferSelect;
+export type InsertCheckinStreak = z.infer<typeof insertCheckinStreakSchema>;
 export type AirtimeReward = typeof airtimeRewards.$inferSelect;
 export type InsertAirtimeReward = z.infer<typeof insertAirtimeRewardSchema>;
 
@@ -114,4 +140,12 @@ export interface ApiQuote {
   content: string;
   author: string;
   tags: string[];
+}
+
+// Button click interface for check-in system
+export interface ButtonClick {
+  buttonNumber: number; // 1-10
+  clickedAt: string; // ISO timestamp
+  adShown: boolean;
+  cooldownUntil: string; // ISO timestamp (clickedAt + 1 minute)
 }
