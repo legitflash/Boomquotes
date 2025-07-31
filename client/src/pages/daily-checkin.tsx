@@ -116,8 +116,8 @@ export default function DailyCheckIn() {
         return;
       }
 
-      // Show ad simulation
-      simulateAd();
+      // Show earning notification
+      showEarningNotification();
 
       // Refresh status to get updated data
       await fetchCheckinStatus();
@@ -134,8 +134,8 @@ export default function DailyCheckIn() {
         }
       } else {
         toast({
-          title: "Ad Watched! 📺",
-          description: `Click ${data.total_clicks_required - data.clicks_completed} more times to complete check-in`,
+          title: "Points Earned! ⭐",
+          description: `Tap ${data.total_clicks_required - data.clicks_completed} more times to complete check-in`,
         });
       }
 
@@ -151,11 +151,11 @@ export default function DailyCheckIn() {
     }
   };
 
-  const simulateAd = () => {
-    // Simulate ad display - in real app, this would trigger actual ad
+  const showEarningNotification = () => {
+    // Show earning notification - placeholder for ad integration
     toast({
-      title: "💰 Ad Displayed",
-      description: "Thanks for watching the ad! You've earned your click.",
+      title: "💰 Points Earned",
+      description: "Great job! You've earned points for this tap.",
     });
   };
 
@@ -244,7 +244,7 @@ export default function DailyCheckIn() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Daily Check-in</h1>
-          <p className="text-gray-600 text-lg">Click 10 times to complete your daily check-in and earn rewards!</p>
+          <p className="text-gray-600 text-lg">Tap 10 times to complete your daily check-in and earn rewards!</p>
         </div>
 
         {/* Main Check-in Card */}
@@ -258,7 +258,7 @@ export default function DailyCheckIn() {
               {checkinStatus?.is_completed ? (
                 <span className="text-green-600 font-semibold">✅ Completed for today!</span>
               ) : (
-                <span>Click the button below to watch ads and complete your check-in</span>
+                <span>Tap the button below to earn points and complete your check-in</span>
               )}
             </CardDescription>
           </CardHeader>
@@ -268,7 +268,7 @@ export default function DailyCheckIn() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Progress</span>
-                <span>{checkinStatus?.clicks_completed || 0} / {checkinStatus?.total_clicks_required || 10} clicks</span>
+                <span>{checkinStatus?.clicks_completed || 0} / {checkinStatus?.total_clicks_required || 10} taps</span>
               </div>
               <Progress value={getProgressPercentage()} className="h-3" />
             </div>
@@ -302,14 +302,14 @@ export default function DailyCheckIn() {
                     ) : (
                       <>
                         <Gift className="h-5 w-5 mr-2" />
-                        Click to Watch Ad
+                        Tap to Earn
                       </>
                     )}
                   </Button>
                   
                   {timeRemaining > 0 && (
                     <p className="text-sm text-gray-500">
-                      Next click available in {formatTime(timeRemaining)}
+                      Next tap available in {formatTime(timeRemaining)}
                     </p>
                   )}
                 </div>
