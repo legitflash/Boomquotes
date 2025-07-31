@@ -18,6 +18,7 @@ Signup Enhancement: All required fields with optional invite code, phone number 
 Messages Page: Dedicated messages section with 12 categories including good morning, love, good night, romantic, sad, breakup
 Quote Preview: Shows generated quotes preview before sharing functionality
 Content Population: Both messages and quotes populated across all pages
+Animated Transitions: Smooth category transitions with framer-motion animations for enhanced UX
 
 ## System Architecture
 

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Heart, Share2, Download, Search, Shuffle, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QuotePreviewModal } from "@/components/quote-preview-modal";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   id: string;
@@ -37,6 +38,7 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -89,6 +91,19 @@ export default function MessagesPage() {
                          message.author.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  // Handle category change with animation
+  const handleCategoryChange = async (categoryId: string) => {
+    if (categoryId === selectedCategory) return;
+    
+    setIsTransitioning(true);
+    
+    // Brief delay to show transition effect
+    setTimeout(() => {
+      setSelectedCategory(categoryId);
+      setIsTransitioning(false);
+    }, 150);
+  };
 
   const handleShare = (message: Message) => {
     setPreviewMessage(message);
@@ -154,123 +169,257 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+      <motion.div 
+        className="bg-white shadow-sm border-b sticky top-0 z-10"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
+          <motion.div 
+            className="flex items-center justify-between mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+          >
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <MessageCircle className="h-6 w-6 mr-2 text-blue-600" />
+              <motion.h1 
+                className="text-2xl font-bold text-gray-900 flex items-center"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              >
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 5, -5, 0],
+                    transition: { duration: 2, repeat: Infinity, repeatDelay: 5 }
+                  }}
+                >
+                  <MessageCircle className="h-6 w-6 mr-2 text-blue-600" />
+                </motion.div>
                 Messages
-              </h1>
-              <p className="text-gray-600">Share meaningful messages for every moment</p>
+              </motion.h1>
+              <motion.p 
+                className="text-gray-600"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              >
+                Share meaningful messages for every moment
+              </motion.p>
             </div>
-            <Button
-              onClick={() => randomMessageMutation.mutate()}
-              disabled={randomMessageMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center"
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Shuffle className="h-4 w-4 mr-2" />
-              Random Message
-            </Button>
-          </div>
+              <Button
+                onClick={() => randomMessageMutation.mutate()}
+                disabled={randomMessageMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center transition-all duration-200"
+              >
+                <motion.div
+                  animate={randomMessageMutation.isPending ? { rotate: 360 } : {}}
+                  transition={{ duration: 1, repeat: randomMessageMutation.isPending ? Infinity : 0 }}
+                >
+                  <Shuffle className="h-4 w-4 mr-2" />
+                </motion.div>
+                Random Message
+              </Button>
+            </motion.div>
+          </motion.div>
 
           {/* Search */}
-          <div className="relative mb-4">
+          <motion.div 
+            className="relative mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search messages..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-blue-500"
             />
-          </div>
+          </motion.div>
 
           {/* Category Filters */}
           <div className="flex flex-wrap gap-2">
             {messageCategories.map((category) => (
-              <Button
+              <motion.div
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                size="sm"
-                className={selectedCategory === category.id ? category.color : ""}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                {category.label}
-              </Button>
+                <Button
+                  onClick={() => handleCategoryChange(category.id)}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  className={`transition-all duration-300 ${
+                    selectedCategory === category.id 
+                      ? `${category.color} transform shadow-md` 
+                      : "hover:shadow-sm"
+                  }`}
+                  disabled={isTransitioning}
+                >
+                  {category.label}
+                </Button>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Messages Grid */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(6)].map((_, index) => (
-              <Card key={index} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredMessages.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages found</h3>
-            <p className="text-gray-600">
-              {searchTerm ? "Try adjusting your search terms" : "Messages will appear here"}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredMessages.map((message) => (
-              <Card key={message.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <blockquote className="text-gray-900 mb-4 leading-relaxed">
-                    "{message.text}"
-                  </blockquote>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <cite className="text-sm text-gray-600">- {message.author}</cite>
-                      <Badge variant="secondary" className="text-xs">
-                        {messageCategories.find(c => c.id === message.category)?.label || message.category}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => addFavoriteMutation.mutate(message)}
-                        disabled={addFavoriteMutation.isPending}
+        <AnimatePresence mode="wait">
+          {isLoading || isTransitioning ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {[...Array(6)].map((_, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                      <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : filteredMessages.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3 }}
+              className="text-center py-12"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  transition: { duration: 2, repeat: Infinity, repeatDelay: 3 }
+                }}
+              >
+                <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              </motion.div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages found</h3>
+              <p className="text-gray-600">
+                {searchTerm ? "Try adjusting your search terms" : "Messages will appear here"}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`messages-${selectedCategory}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {filteredMessages.map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ 
+                    delay: index * 0.05,
+                    duration: 0.3,
+                    ease: "easeOut"
+                  }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <Card className="hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
+                    <CardContent className="p-6">
+                      <motion.blockquote 
+                        className="text-gray-900 mb-4 leading-relaxed"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.05 + 0.2 }}
                       >
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(message)}
+                        "{message.text}"
+                      </motion.blockquote>
+                      
+                      <motion.div 
+                        className="flex items-center justify-between"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.05 + 0.3 }}
                       >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleShare(message)}
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                        <div className="flex items-center space-x-2">
+                          <cite className="text-sm text-gray-600">- {message.author}</cite>
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                          >
+                            <Badge variant="secondary" className="text-xs">
+                              {messageCategories.find(c => c.id === message.category)?.label || message.category}
+                            </Badge>
+                          </motion.div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => addFavoriteMutation.mutate(message)}
+                              disabled={addFavoriteMutation.isPending}
+                              className="hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <Heart className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(message)}
+                              className="hover:bg-blue-50 hover:text-blue-500 transition-colors"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleShare(message)}
+                              className="hover:bg-green-50 hover:text-green-500 transition-colors"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Quote Preview Modal */}
