@@ -616,7 +616,6 @@ const expandMessagesByCategory = {
     "Sometimes we need to feel sad to appreciate the good times.",
     "Your pain is real, and your healing matters.",
     "It's okay to take things one day at a time, or even one breath at a time."
-    // Continue with 90+ more sad messages...
   ],
   'breakup': [
     "Heartbreak is the price we pay for the privilege of loving deeply.",
@@ -629,7 +628,6 @@ const expandMessagesByCategory = {
     "Breakups are hard, but staying in the wrong relationship is harder.",
     "You are not broken, you are breaking open to let the light in.",
     "The right person will love all the parts of you that the wrong person couldn't handle."
-    // Continue with 90+ more breakup messages...
   ],
   'birthday': [
     "Happy Birthday! May this new year of life bring you joy, love, and endless possibilities.",
@@ -642,7 +640,6 @@ const expandMessagesByCategory = {
     "On your special day, remember how much you are loved and appreciated. Happy Birthday!",
     "Happy Birthday! May this year bring you closer to all your goals and dreams.",
     "Wishing you happiness, health, and all the best things in life on your birthday."
-    // Continue with 90+ more birthday messages...
   ]
 };
 

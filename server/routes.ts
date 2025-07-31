@@ -130,20 +130,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { category } = req.params;
       
       // Handle special endpoints that shouldn't be treated as categories
-      if (category === 'all' || category === 'daily' || category === 'categories') {
+      if (category === 'daily' || category === 'categories') {
         return res.status(400).json({ message: "Invalid category endpoint" });
       }
       
-      const { getCategoryMessages } = await import("../messages_comprehensive.js");
-      const messages = getCategoryMessages(category);
-      
-      if (messages.length === 0) {
-        return res.status(404).json({ message: "Category not found or no messages available" });
+      // Use the content expander to get 100+ messages per category
+      try {
+        const { getExpandedContent } = await import("../server/content-expander.js");
+        
+        if (category === 'all') {
+          // Return messages from all categories
+          const allCategories = ['good-morning', 'good-night', 'love', 'romantic', 'sad', 'breakup', 'friendship', 'birthday', 'congratulations', 'encouragement', 'thank-you', 'apology'];
+          let allMessages = [];
+          
+          for (const cat of allCategories) {
+            const categoryMessages = getExpandedContent(cat, 'message', 20); // Get 20 from each category
+            allMessages.push(...categoryMessages);
+          }
+          
+          // Shuffle and return
+          allMessages = allMessages.sort(() => Math.random() - 0.5);
+          return res.json(allMessages);
+        }
+        
+        // Get specific category messages
+        const messages = getExpandedContent(category, 'message', 100);
+        if (messages.length > 0) {
+          return res.json(messages);
+        } else {
+          // Fallback to old method
+          const { getCategoryMessages } = await import("../messages_comprehensive.js");
+          const fallbackMessages = getCategoryMessages(category);
+          
+          // Convert plain text to message objects
+          const messageObjects = fallbackMessages.map((text: string, index: number) => ({
+            id: `msg_${category}_${Date.now()}_${index}`,
+            text,
+            category,
+            source: 'Boomquotes Collection'
+          }));
+          
+          return res.json(messageObjects);
+        }
+      } catch (error) {
+        console.error(`Error loading expanded messages for category ${category}:`, error);
+        return res.status(404).json({ message: "Category not found" });
       }
-      
-      res.json(messages);
     } catch (error) {
-      console.error("Error fetching category messages:", error);
+      console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });

@@ -57,7 +57,20 @@ export default function MessagesPage() {
       const endpoint = selectedCategory === "all" ? "/api/messages/all" : `/api/messages/${selectedCategory}`;
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error("Failed to fetch messages");
-      return response.json();
+      const data = await response.json();
+      
+      // If we get an array of strings instead of message objects, convert them
+      if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
+        return data.map((text: string, index: number) => ({
+          id: `msg_${selectedCategory}_${Date.now()}_${index}`,
+          text,
+          author: 'Boomquotes Collection',
+          category: selectedCategory,
+          source: 'Boomquotes Collection'
+        }));
+      }
+      
+      return data;
     },
   });
 
