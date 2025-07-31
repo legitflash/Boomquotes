@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { NotificationSettings } from "@/components/notification-settings";
+import { QuoteSourcesManager } from "@/components/quote-sources-manager";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { User, Phone, Trophy, Gift, CheckCircle, Clock } from "lucide-react";
@@ -454,6 +455,11 @@ export default function Profile() {
         {/* Notification Settings */}
         <div className="mt-8">
           <NotificationSettings />
+        </div>
+
+        {/* Quote Sources Management */}
+        <div className="mt-8">
+          <QuoteSourcesManager />
         </div>
 
         {/* Rewards History */}

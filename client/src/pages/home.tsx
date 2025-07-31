@@ -10,6 +10,7 @@ import { QuotesGrid } from "@/components/quotes-grid";
 import { ShareModal } from "@/components/share-modal";
 import { useFavorites, useAddFavorite, useRemoveFavorite } from "@/hooks/use-favorites";
 import { QuotesAPI } from "@/lib/quotes-api";
+import { QuoteAggregator } from "@/lib/quote-sources";
 import { apiRequest } from "@/lib/queryClient";
 import type { Quote } from "@shared/schema";
 
@@ -27,14 +28,15 @@ export default function Home() {
   const randomQuoteMutation = useMutation({
     mutationFn: async () => {
       try {
-        // Try to get quote from external API
-        const externalQuote = await QuotesAPI.getRandomQuote();
+        // Try multiple quote sources for better variety
+        const externalQuote = await QuoteAggregator.getRandomQuoteFromMultipleSources();
         const mappedQuote = QuotesAPI.mapExternalQuoteToLocal(externalQuote);
         
         // Add to our database
         const response = await apiRequest("POST", "/api/quotes", mappedQuote);
         return await response.json();
       } catch (error) {
+        console.warn("All external sources failed, using local quote:", error);
         // Fallback to local random quote
         const response = await apiRequest("GET", "/api/quotes/random");
         return await response.json();

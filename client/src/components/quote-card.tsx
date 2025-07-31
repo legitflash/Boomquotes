@@ -1,5 +1,6 @@
 import { Share, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QuoteSourceIndicator } from "@/components/quote-source-indicator";
 import type { Quote } from "@shared/schema";
 
 interface QuoteCardProps {
@@ -53,8 +54,9 @@ export function QuoteCard({ quote, onShare, onToggleFavorite, isFavorite }: Quot
         "{quote.text}"
       </blockquote>
       
-      <footer className="text-neutral-500 font-medium">
-        — {quote.author}
+      <footer className="flex items-center justify-between">
+        <span className="text-neutral-500 font-medium">— {quote.author}</span>
+        <QuoteSourceIndicator source={(quote as any).source || "builtin"} />
       </footer>
     </div>
   );

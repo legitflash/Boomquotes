@@ -63,6 +63,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fetch quotes from external sources by category
+  app.post("/api/quotes/fetch-external/:category", async (req, res) => {
+    try {
+      const { category } = req.params;
+      const limit = parseInt(req.query.limit as string) || 5;
+      
+      // This endpoint would typically integrate with external APIs
+      // For now, return success to indicate the endpoint is available
+      res.json({ 
+        success: true, 
+        message: `External quote fetch endpoint for ${category} ready`,
+        category,
+        limit
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch external quotes" });
+    }
+  });
+
   // Get favorites
   app.get("/api/favorites", async (req, res) => {
     try {
