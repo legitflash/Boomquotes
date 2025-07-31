@@ -6,12 +6,40 @@ import { insertQuoteSchema, insertFavoriteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all quotes with optional category filter
-  app.get("/api/quotes", (req, res) => {
+  app.get("/api/quotes", async (req, res) => {
     try {
-      const quotes = storage.getQuotes();
+      let quotes = storage.getQuotes();
       const category = req.query.category as string;
       
-      if (category) {
+      // If no quotes in storage, try to get from content expander
+      if (quotes.length === 0) {
+        try {
+          const { getExpandedContent } = await import("../server/content-expander.js");
+          const expandedQuotes = getExpandedContent('all', 'quote', 100);
+          quotes = expandedQuotes;
+          
+          // Add to storage for future requests
+          for (const quote of expandedQuotes) {
+            storage.addQuote(quote);
+          }
+        } catch (error) {
+          console.error("Error loading expanded quotes:", error);
+        }
+      }
+      
+      if (category && category !== 'all') {
+        // Try expanded content for specific category
+        try {
+          const { getExpandedContent } = await import("../server/content-expander.js");
+          const categoryQuotes = getExpandedContent(category, 'quote', 100);
+          if (categoryQuotes.length > 0) {
+            return res.json(categoryQuotes);
+          }
+        } catch (error) {
+          console.error(`Error loading expanded quotes for ${category}:`, error);
+        }
+        
+        // Fallback to filtered storage quotes
         const filteredQuotes = quotes.filter(quote => 
           quote.category.toLowerCase() === category.toLowerCase()
         );
@@ -20,6 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(quotes);
       }
     } catch (error) {
+      console.error("Error in quotes endpoint:", error);
       res.status(500).json({ message: "Failed to fetch quotes" });
     }
   });

@@ -430,14 +430,17 @@ export default function MessagesPage() {
                 >
                   <Card className="hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
                     <CardContent className="p-6">
-                      <motion.blockquote 
-                        className="text-gray-900 mb-4 leading-relaxed"
+                      <motion.div 
+                        className="relative mb-4 p-4 rounded-lg bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: index * 0.05 + 0.2 }}
                       >
-                        "{message.text}"
-                      </motion.blockquote>
+                        <blockquote className="text-gray-900 dark:text-gray-100 leading-relaxed font-medium relative z-10">
+                          "{message.text}"
+                        </blockquote>
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-200/30 via-purple-200/30 to-pink-200/30 dark:from-blue-600/10 dark:via-purple-600/10 dark:to-pink-600/10 rounded-lg blur-sm"></div>
+                      </motion.div>
                       
                       <motion.div 
                         className="flex items-center justify-between"

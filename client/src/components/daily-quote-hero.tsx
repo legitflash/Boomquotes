@@ -142,22 +142,23 @@ export function DailyQuoteHero({ onShare, onToggleFavorite, isFavorite }: DailyQ
 
   return (
     <section className="mb-12">
-      <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 text-white relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 left-4 text-6xl">
-            <QuoteIcon className="w-16 h-16" />
-          </div>
-          <div className="absolute bottom-4 right-4 text-6xl rotate-180">
-            <QuoteIcon className="w-16 h-16" />
-          </div>
+      <div className="bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-2xl p-8 text-white relative overflow-hidden">
+        {/* Enhanced Background pattern with colorful gradients */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-4 left-4 w-24 h-24 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full blur-lg" />
+          <div className="absolute bottom-4 right-4 w-32 h-32 bg-gradient-to-br from-blue-300 to-teal-400 rounded-full blur-lg" />
+          <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-gradient-to-br from-green-300 to-emerald-400 rounded-full blur-lg" />
+          <div className="absolute top-1/4 right-1/4 w-20 h-20 bg-gradient-to-br from-pink-300 to-rose-400 rounded-full blur-lg" />
         </div>
         
         <div className="relative z-10">
           <h2 className="text-lg font-medium mb-4 opacity-90">Quote of the Day</h2>
-          <blockquote className="text-2xl md:text-3xl font-light leading-relaxed mb-6">
-            "{quote.text}"
-          </blockquote>
+          <div className="relative mb-6 p-6 rounded-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm border border-white/20">
+            <blockquote className="text-2xl md:text-3xl font-light leading-relaxed relative z-10">
+              "{quote.text}"
+            </blockquote>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 rounded-xl"></div>
+          </div>
           <footer className="text-lg opacity-90">
             — <cite>{quote.author}</cite>
           </footer>

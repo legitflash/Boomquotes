@@ -44,6 +44,42 @@ const expandQuotesByCategory = {
     "Whether you think you can or you think you can't, you're right.",
     "The only person you are destined to become is the person you decide to be."
   ],
+  hustle: [
+    "Success is where preparation and opportunity meet.",
+    "Hustle until your haters ask if you're hiring.",
+    "The grind never stops, and neither do I.",
+    "Work hard in silence, let success make the noise.",
+    "Every expert was once a beginner, every pro was once an amateur.",
+    "Success isn't given, it's earned in the gym, on the field, in every quiet moment.",
+    "The dream is free, the hustle is sold separately.",
+    "While others sleep, I grind. While others party, I work.",
+    "Success is the sum of small efforts repeated day in and day out.",
+    "Hustle like you're broke, work like you don't need money."
+  ],
+  wisdom: [
+    "The only true wisdom is in knowing you know nothing.",
+    "Wisdom is not a product of schooling but of the lifelong attempt to acquire it.",
+    "The fool doth think he is wise, but the wise man knows himself to be a fool.",
+    "Knowledge speaks, but wisdom listens.",
+    "The greatest wisdom is to realize one's lack of it.",
+    "Wisdom begins in wonder.",
+    "A wise person learns from the mistakes of others.",
+    "The art of being wise is knowing what to overlook.",
+    "Wisdom is the reward you get for a lifetime of listening when you'd have preferred to talk.",
+    "The wise find pleasure in water; the virtuous find pleasure in hills."
+  ],
+  life: [
+    "Life is what happens to you while you're busy making other plans.",
+    "The purpose of our lives is to be happy.",
+    "Life is 10% what happens to you and 90% how you react to it.",
+    "In the end, we will remember not the words of our enemies, but the silence of our friends.",
+    "Life is really simple, but we insist on making it complicated.",
+    "The biggest adventure you can take is to live the life of your dreams.",
+    "Life isn't about finding yourself. Life is about creating yourself.",
+    "The good life is one inspired by love and guided by knowledge.",
+    "Life is short, and it is up to you to make it sweet.",
+    "Life is either a daring adventure or nothing at all."
+  ],
   love: [
     "Love is not about how many days, months, or years you have been together.",
     "The best thing to hold onto in life is each other.",

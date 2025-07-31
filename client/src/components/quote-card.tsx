@@ -50,9 +50,12 @@ export function QuoteCard({ quote, onShare, onToggleFavorite, isFavorite }: Quot
         </div>
       </div>
       
-      <blockquote className="text-lg leading-relaxed text-gray-800 mb-4">
-        "{quote.text}"
-      </blockquote>
+      <div className="relative mb-4 p-4 rounded-lg bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20">
+        <blockquote className="text-lg leading-relaxed text-gray-800 dark:text-gray-100 font-medium relative z-10">
+          "{quote.text}"
+        </blockquote>
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/30 via-blue-200/30 to-purple-200/30 dark:from-emerald-600/10 dark:via-blue-600/10 dark:to-purple-600/10 rounded-lg blur-sm"></div>
+      </div>
       
       <footer className="flex items-center justify-between">
         <span className="text-neutral-500 font-medium">— {quote.author}</span>
