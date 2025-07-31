@@ -49,20 +49,21 @@ interface ReferralStats {
 
 export interface IStorage {
   // Quotes
-  getQuotes(category?: string): Promise<Quote[]>;
-  getQuoteById(id: string): Promise<Quote | undefined>;
-  createQuote(quote: InsertQuote): Promise<Quote>;
+  getQuotes(category?: string): Quote[];
+  getQuoteById(id: string): Quote | undefined;
+  createQuote(quote: InsertQuote): Quote;
   
-  // Messages
-  getMessages(category?: string): Promise<Message[]>;
-  getMessageById(id: string): Promise<Message | undefined>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  
-  // Favorites
-  getFavorites(userId: string): Promise<Favorite[]>;
-  addFavorite(userId: string, favorite: Omit<InsertFavorite, 'userId'>): Promise<Favorite>;
-  removeFavorite(userId: string, quoteId: string): Promise<boolean>;
-  isFavorite(userId: string, quoteId: string): Promise<boolean>;
+  // Favorites (quotes)
+  getFavorites(): Quote[];
+  addFavorite(quote: Quote): void;
+  removeFavorite(quoteId: string): boolean;
+  isFavorite(quoteId: string): boolean;
+
+  // Message favorites
+  getMessageFavorites(): any[];
+  addMessageFavorite(message: any): void;
+  removeMessageFavorite(messageId: string): void;
+  isMessageFavorite(messageId: string): boolean;
 
   // Check-in operations
   getTodayCheckin(userId: string, date: string): Promise<CheckIn | null>;

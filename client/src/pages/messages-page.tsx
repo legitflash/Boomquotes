@@ -43,27 +43,44 @@ export default function MessagesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch messages
+  // Fetch messages based on category
   const { data: messages = [], isLoading } = useQuery<Message[]>({
     queryKey: ["/api/messages", selectedCategory],
+    queryFn: async () => {
+      const endpoint = selectedCategory === "all" ? "/api/messages/all" : `/api/messages/${selectedCategory}`;
+      const response = await fetch(endpoint);
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return response.json();
+    },
   });
 
-  // Add to favorites mutation
+  // Fetch message favorites
+  const { data: messageFavorites = [] } = useQuery<Message[]>({
+    queryKey: ["/api/message-favorites"],
+    queryFn: async () => {
+      const response = await fetch("/api/message-favorites");
+      if (!response.ok) throw new Error("Failed to fetch message favorites");
+      return response.json();
+    },
+  });
+
+  // Add to message favorites mutation
   const addFavoriteMutation = useMutation({
     mutationFn: async (message: Message) => {
-      const response = await fetch("/api/favorites", {
+      const response = await fetch("/api/message-favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          quoteId: message.id,
-          quoteData: message,
+          messageId: message.id,
+          messageText: message.text,
+          category: message.category,
         }),
       });
       if (!response.ok) throw new Error("Failed to add favorite");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/message-favorites"] });
       toast({
         title: "Added to favorites!",
         description: "Message saved to your favorites.",
@@ -71,10 +88,29 @@ export default function MessagesPage() {
     },
   });
 
+  // Remove from message favorites mutation
+  const removeFavoriteMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      const response = await fetch(`/api/message-favorites/${messageId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to remove favorite");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/message-favorites"] });
+      toast({
+        title: "Removed from favorites",
+        description: "Message removed from your favorites.",
+      });
+    },
+  });
+
   // Get random message mutation
   const randomMessageMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/messages/random");
+      const category = selectedCategory === "all" ? "" : selectedCategory;
+      const response = await fetch(`/api/messages/random?category=${category}`);
       if (!response.ok) throw new Error("Failed to fetch random message");
       return response.json();
     },
@@ -84,13 +120,26 @@ export default function MessagesPage() {
     },
   });
 
-  // Filter messages based on category and search
+  // Filter messages based on search (category filtering is now handled by API)
   const filteredMessages = messages.filter((message) => {
-    const matchesCategory = selectedCategory === "all" || message.category === selectedCategory;
     const matchesSearch = message.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         message.author.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+                         (message.source && message.source.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
   });
+
+  // Check if message is favorited
+  const isMessageFavorited = (messageId: string) => {
+    return messageFavorites.some(fav => fav.id === messageId);
+  };
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = (message: Message) => {
+    if (isMessageFavorited(message.id)) {
+      removeFavoriteMutation.mutate(message.id);
+    } else {
+      addFavoriteMutation.mutate(message);
+    }
+  };
 
   // Handle category change with animation
   const handleCategoryChange = async (categoryId: string) => {
@@ -384,11 +433,15 @@ export default function MessagesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => addFavoriteMutation.mutate(message)}
-                              disabled={addFavoriteMutation.isPending}
-                              className="hover:bg-red-50 hover:text-red-500 transition-colors"
+                              onClick={() => handleFavoriteToggle(message)}
+                              disabled={addFavoriteMutation.isPending || removeFavoriteMutation.isPending}
+                              className={`transition-colors ${
+                                isMessageFavorited(message.id)
+                                  ? "text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                              }`}
                             >
-                              <Heart className="h-4 w-4" />
+                              <Heart className={`h-4 w-4 ${isMessageFavorited(message.id) ? "fill-current" : ""}`} />
                             </Button>
                           </motion.div>
                           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -422,15 +475,22 @@ export default function MessagesPage() {
         </AnimatePresence>
       </div>
 
-      {/* Quote Preview Modal */}
-      <QuotePreviewModal
-        isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        quote={previewMessage}
-        onShare={(platform) => {
-          console.log(`Shared message via ${platform}`);
-        }}
-      />
+      {/* Message Preview Modal */}
+      {previewMessage && (
+        <QuotePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          quote={{
+            id: previewMessage.id,
+            text: previewMessage.text,
+            author: previewMessage.source || 'Boomquotes Collection',
+            category: previewMessage.category
+          }}
+          onShare={(platform) => {
+            console.log(`Shared message via ${platform}`);
+          }}
+        />
+      )}
     </div>
   );
 }

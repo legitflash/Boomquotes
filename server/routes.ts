@@ -1,25 +1,33 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./simple-storage";
 import { createReloadlyService } from "./reloadly";
 import { insertQuoteSchema, insertFavoriteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all quotes with optional category filter
-  app.get("/api/quotes", async (req, res) => {
+  app.get("/api/quotes", (req, res) => {
     try {
+      const quotes = storage.getQuotes();
       const category = req.query.category as string;
-      const quotes = await storage.getQuotes(category);
-      res.json(quotes);
+      
+      if (category) {
+        const filteredQuotes = quotes.filter(quote => 
+          quote.category.toLowerCase() === category.toLowerCase()
+        );
+        res.json(filteredQuotes);
+      } else {
+        res.json(quotes);
+      }
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch quotes" });
     }
   });
 
   // Get random quote
-  app.get("/api/quotes/random", async (req, res) => {
+  app.get("/api/quotes/random", (req, res) => {
     try {
-      const quotes = await storage.getQuotes();
+      const quotes = storage.getQuotes();
       if (quotes.length === 0) {
         return res.status(404).json({ message: "No quotes available" });
       }
@@ -31,9 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get daily quote
-  app.get("/api/quotes/daily", async (req, res) => {
+  app.get("/api/quotes/daily", (req, res) => {
     try {
-      const quotes = await storage.getQuotes();
+      const quotes = storage.getQuotes();
       if (quotes.length === 0) {
         return res.status(404).json({ message: "No quotes available" });
       }
@@ -64,15 +72,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MESSAGES ENDPOINTS
+  // MESSAGE ENDPOINTS
   
-  // Get all messages with optional category filter
-  app.get("/api/messages", async (req, res) => {
+  // Get all messages
+  app.get("/api/messages/all", async (req, res) => {
     try {
-      const category = req.query.category as string;
-      const messages = await storage.getMessages(category);
+      const { getAllMessages } = await import("../messages_data.js");
+      const messages = getAllMessages();
       res.json(messages);
     } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get messages by category
+  app.get("/api/messages/:category", async (req, res) => {
+    try {
+      const { category } = req.params;
+      
+      // Handle special endpoints that shouldn't be treated as categories
+      if (category === 'all' || category === 'random' || category === 'daily' || category === 'categories') {
+        return res.status(400).json({ message: "Invalid category endpoint" });
+      }
+      
+      const { getCategoryMessages } = await import("../messages_data.js");
+      const messages = getCategoryMessages(category);
+      
+      if (messages.length === 0) {
+        return res.status(404).json({ message: "Category not found or no messages available" });
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching category messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
@@ -80,28 +113,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get random message
   app.get("/api/messages/random", async (req, res) => {
     try {
-      const messages = await storage.getMessages();
-      if (messages.length === 0) {
+      const { category } = req.query;
+      const { getRandomMessage, getAllMessages } = await import("../messages_data.js");
+      
+      let randomMessage;
+      if (category && category !== 'all') {
+        randomMessage = getRandomMessage(category);
+      } else {
+        // Get random from all messages
+        const allMessages = getAllMessages();
+        if (allMessages.length > 0) {
+          const randomIndex = Math.floor(Math.random() * allMessages.length);
+          randomMessage = allMessages[randomIndex];
+        }
+      }
+      
+      if (!randomMessage) {
         return res.status(404).json({ message: "No messages available" });
       }
-      const randomIndex = Math.floor(Math.random() * messages.length);
-      res.json(messages[randomIndex]);
+      
+      res.json(randomMessage);
     } catch (error) {
+      console.error("Error fetching random message:", error);
       res.status(500).json({ message: "Failed to fetch random message" });
     }
   });
 
-  // Get message by ID
-  app.get("/api/messages/:id", async (req, res) => {
+  // Get daily message
+  app.get("/api/messages/daily", async (req, res) => {
     try {
-      const { id } = req.params;
-      const message = await storage.getMessageById(id);
-      if (!message) {
-        return res.status(404).json({ message: "Message not found" });
+      const { getDailyMessage } = await import("../messages_data.js");
+      const dailyMessage = getDailyMessage();
+      
+      if (!dailyMessage) {
+        return res.status(404).json({ message: "No daily message available" });
       }
-      res.json(message);
+      
+      res.json(dailyMessage);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch message" });
+      console.error("Error fetching daily message:", error);
+      res.status(500).json({ message: "Failed to fetch daily message" });
+    }
+  });
+
+  // Message categories
+  app.get("/api/messages/categories", async (req, res) => {
+    try {
+      const { messageCategories } = await import("../messages_data.js");
+      res.json(messageCategories);
+    } catch (error) {
+      console.error("Error fetching message categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
     }
   });
 
@@ -140,9 +202,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get favorites
-  app.get("/api/favorites", async (req, res) => {
+  app.get("/api/favorites", (req, res) => {
     try {
-      const favorites = await storage.getFavorites();
+      const favorites = storage.getFavorites();
       res.json(favorites);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch favorites" });
@@ -150,41 +212,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add favorite
-  app.post("/api/favorites", async (req, res) => {
+  app.post("/api/favorites", (req, res) => {
     try {
-      const result = insertFavoriteSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid favorite data", errors: result.error.errors });
-      }
-      
-      const favorite = await storage.addFavorite(result.data);
-      res.json(favorite);
+      const { quoteId, quoteText, author, category } = req.body;
+      const quote = { 
+        id: quoteId, 
+        text: quoteText, 
+        author: author || 'Unknown',
+        category: category || 'general',
+        source: 'favorites'
+      };
+      storage.addFavorite(quote);
+      res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to add favorite" });
     }
   });
 
   // Remove favorite
-  app.delete("/api/favorites/:quoteId", async (req, res) => {
+  app.delete("/api/favorites/:quoteId", (req, res) => {
     try {
       const { quoteId } = req.params;
-      const removed = await storage.removeFavorite(quoteId);
+      const removed = storage.removeFavorite(quoteId);
       
       if (!removed) {
         return res.status(404).json({ message: "Favorite not found" });
       }
       
-      res.json({ message: "Favorite removed successfully" });
+      res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to remove favorite" });
     }
   });
 
+  // MESSAGE FAVORITES ENDPOINTS
+  
+  // Get message favorites
+  app.get("/api/message-favorites", (req, res) => {
+    try {
+      const favorites = storage.getMessageFavorites();
+      res.json(favorites);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch message favorites" });
+    }
+  });
+
+  // Add message favorite
+  app.post("/api/message-favorites", (req, res) => {
+    try {
+      const { messageId, messageText, category } = req.body;
+      const message = { 
+        id: messageId, 
+        text: messageText, 
+        category: category || 'general',
+        source: 'Boomquotes Collection'
+      };
+      storage.addMessageFavorite(message);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add message favorite" });
+    }
+  });
+
+  // Remove message favorite
+  app.delete("/api/message-favorites/:messageId", (req, res) => {
+    try {
+      const { messageId } = req.params;
+      storage.removeMessageFavorite(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove message favorite" });
+    }
+  });
+
   // Check if quote is favorite
-  app.get("/api/favorites/:quoteId", async (req, res) => {
+  app.get("/api/favorites/:quoteId", (req, res) => {
     try {
       const { quoteId } = req.params;
-      const isFavorite = await storage.isFavorite(quoteId);
+      const isFavorite = storage.isFavorite(quoteId);
       res.json({ isFavorite });
     } catch (error) {
       res.status(500).json({ message: "Failed to check favorite status" });
@@ -192,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notification subscription endpoints
-  app.post("/api/notifications/subscribe", async (req, res) => {
+  app.post("/api/notifications/subscribe", (req, res) => {
     try {
       const { subscription, timestamp } = req.body;
       console.log('Push subscription received:', subscription?.endpoint);
@@ -206,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notifications/unsubscribe", async (req, res) => {
+  app.post("/api/notifications/unsubscribe", (req, res) => {
     try {
       const { subscription } = req.body;
       console.log('Push unsubscription received:', subscription?.endpoint);
