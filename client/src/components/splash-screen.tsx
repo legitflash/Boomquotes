@@ -11,14 +11,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Always show splash for a minimum time, then check auth state
+    // Show splash screen for minimum time, but don't wait indefinitely for auth
+    const minSplashTime = 2000; // 2 seconds minimum
+    const maxSplashTime = 4000; // 4 seconds maximum
+    
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onComplete, 300); // Wait for fade out animation
-    }, loading ? 3000 : (user ? 1500 : 2500)); // Show longer if still loading
+    }, loading ? maxSplashTime : minSplashTime);
 
     return () => clearTimeout(timer);
-  }, [onComplete, user, loading]);
+  }, [onComplete, loading]);
 
   if (!isVisible) {
     return (

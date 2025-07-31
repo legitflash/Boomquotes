@@ -25,38 +25,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simplified auth check - simulate authentication
-    const checkAuth = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initializing Supabase auth...');
         
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth timeout')), 8000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
+        
+        if (!mounted) return;
+
         if (error) {
           console.warn('Supabase auth error:', error);
-          // Set loading to false even if auth fails so app can proceed
           setLoading(false);
           return;
         }
 
+        console.log('Auth session:', session ? 'Found existing session' : 'No existing session');
+        
         setSession(session);
         setUser(session?.user ?? null);
+        
         if (session?.user) {
           await fetchUserProfile(session.user.id);
         }
+        
         setLoading(false);
       } catch (error) {
         console.warn('Auth initialization error:', error);
-        // Always set loading to false so app doesn't get stuck
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    checkAuth();
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -68,7 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -80,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', error);
+        console.warn('User profile not found, will create on first update:', error.message);
         return;
       }
 
@@ -88,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(data);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.warn('Error fetching user profile:', error);
     }
   };
 
