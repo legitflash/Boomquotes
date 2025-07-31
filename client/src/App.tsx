@@ -5,10 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { SplashScreen } from "@/components/splash-screen";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import DailyCheckIn from "@/pages/daily-checkin";
 import NotFound from "@/pages/not-found";
+import { useState } from "react";
 
 function Router() {
   return (
@@ -22,6 +24,12 @@ function Router() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

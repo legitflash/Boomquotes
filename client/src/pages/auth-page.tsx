@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Quote, Loader2, MapPin } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Quote, Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const { user, signIn, signUp, loading } = useAuth();
@@ -18,6 +19,8 @@ export default function AuthPage() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Redirect if already logged in
   if (user && !loading) {
@@ -38,6 +41,9 @@ export default function AuthPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ageConfirmed || !termsAccepted) {
+      return;
+    }
     setIsLoading(true);
     try {
       await signUp(signupEmail, signupPassword, signupPhone);
@@ -64,7 +70,7 @@ export default function AuthPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               Discover inspiring quotes, complete daily check-ins, and earn rewards. 
-              Join thousands of Nigerians getting motivated every day.
+              Join thousands getting motivated every day.
             </p>
           </div>
           
@@ -83,8 +89,8 @@ export default function AuthPage() {
               <span>Earn ₦500 airtime after 30 completed check-ins</span>
             </div>
             <div className="flex items-center space-x-3 text-primary font-medium">
-              <MapPin className="w-4 h-4" />
-              <span>Available for Nigerian users</span>
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>Share quotes with friends and family</span>
             </div>
           </div>
 
@@ -210,14 +216,41 @@ export default function AuthPage() {
                         className="h-11"
                       />
                       <p className="text-xs text-gray-500">
-                        Required for Nigerian users to receive airtime rewards
+                        Required to receive airtime rewards
                       </p>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox 
+                          id="age-confirm" 
+                          checked={ageConfirmed}
+                          onCheckedChange={(checked) => setAgeConfirmed(checked as boolean)}
+                        />
+                        <Label htmlFor="age-confirm" className="text-sm leading-5">
+                          I confirm that I am 16 years of age or older
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <Checkbox 
+                          id="terms-accept" 
+                          checked={termsAccepted}
+                          onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+                        />
+                        <Label htmlFor="terms-accept" className="text-sm leading-5">
+                          I accept the{" "}
+                          <button type="button" className="text-primary underline hover:no-underline">
+                            Terms of Service
+                          </button>
+                        </Label>
+                      </div>
                     </div>
                     
                     <Button 
                       type="submit" 
                       className="w-full h-11 text-base"
-                      disabled={isLoading}
+                      disabled={isLoading || !ageConfirmed || !termsAccepted}
                     >
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -228,9 +261,7 @@ export default function AuthPage() {
                 </TabsContent>
               </Tabs>
               
-              <div className="mt-6 text-center text-sm text-gray-500">
-                <p>🇳🇬 Proudly serving Nigerian users</p>
-              </div>
+
             </CardContent>
           </Card>
         </div>
