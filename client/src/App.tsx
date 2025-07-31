@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SplashScreen } from "@/components/splash-screen";
 import Home from "@/pages/home";
+import MessagesPage from "@/pages/messages-page";
 import AuthPage from "@/pages/auth-page";
 import DailyCheckIn from "@/pages/daily-checkin";
 import EnhancedProfile from "@/pages/enhanced-profile";
@@ -22,6 +23,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/messages" component={MessagesPage} />
       <ProtectedRoute path="/daily" component={DailyCheckIn} />
       <ProtectedRoute path="/profile" component={EnhancedProfile} />
       <ProtectedRoute path="/bookmarks" component={Bookmarks} />

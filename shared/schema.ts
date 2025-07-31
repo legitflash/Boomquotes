@@ -22,6 +22,15 @@ export const quotes = pgTable("quotes", {
   source: text("source").default("builtin"), // "api" or "builtin"
 });
 
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  text: text("text").notNull(),
+  author: text("author").notNull(),
+  category: text("category").notNull(),
+  source: text("source").default("builtin"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const favorites = pgTable("favorites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid("user_id").references(() => userProfiles.id),
@@ -99,6 +108,11 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
 export const insertQuoteSchema = createInsertSchema(quotes).omit({
   id: true,
   source: true,
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({

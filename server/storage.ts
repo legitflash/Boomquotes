@@ -53,6 +53,11 @@ export interface IStorage {
   getQuoteById(id: string): Promise<Quote | undefined>;
   createQuote(quote: InsertQuote): Promise<Quote>;
   
+  // Messages
+  getMessages(category?: string): Promise<Message[]>;
+  getMessageById(id: string): Promise<Message | undefined>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  
   // Favorites
   getFavorites(userId: string): Promise<Favorite[]>;
   addFavorite(userId: string, favorite: Omit<InsertFavorite, 'userId'>): Promise<Favorite>;

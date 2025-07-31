@@ -64,6 +64,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MESSAGES ENDPOINTS
+  
+  // Get all messages with optional category filter
+  app.get("/api/messages", async (req, res) => {
+    try {
+      const category = req.query.category as string;
+      const messages = await storage.getMessages(category);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get random message
+  app.get("/api/messages/random", async (req, res) => {
+    try {
+      const messages = await storage.getMessages();
+      if (messages.length === 0) {
+        return res.status(404).json({ message: "No messages available" });
+      }
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      res.json(messages[randomIndex]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch random message" });
+    }
+  });
+
+  // Get message by ID
+  app.get("/api/messages/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const message = await storage.getMessageById(id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch message" });
+    }
+  });
+
   // Add quote from external API
   app.post("/api/quotes", async (req, res) => {
     try {

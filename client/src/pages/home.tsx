@@ -8,6 +8,7 @@ import { DailyQuoteHero } from "@/components/daily-quote-hero";
 import { CategoryFilters } from "@/components/category-filters";
 import { QuotesGrid } from "@/components/quotes-grid";
 import { ShareModal } from "@/components/share-modal";
+import { QuotePreviewModal } from "@/components/quote-preview-modal";
 import { useFavorites, useAddFavorite, useRemoveFavorite } from "@/hooks/use-favorites";
 import { QuotesAPI } from "@/lib/quotes-api";
 import { QuoteAggregator } from "@/lib/quote-sources";
@@ -17,6 +18,7 @@ import type { Quote } from "@shared/schema";
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   
   const { toast } = useToast();
@@ -45,7 +47,7 @@ export default function Home() {
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
       setSelectedQuote(newQuote);
-      setShareModalOpen(true);
+      setPreviewModalOpen(true);
       toast({
         title: "Random quote generated!",
         description: "Enjoy this new quote.",
@@ -124,6 +126,16 @@ export default function Home() {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         quote={selectedQuote}
+      />
+      
+      <QuotePreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        quote={selectedQuote}
+        onShare={(platform) => {
+          console.log(`Shared quote via ${platform}`);
+          setPreviewModalOpen(false);
+        }}
       />
 
       {/* Floating Action Button */}
