@@ -721,6 +721,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
   });
 
+  // Missing endpoints that are needed for the app
+  
+  // Profile update endpoint
+  app.put("/api/profile", async (req, res) => {
+    try {
+      const userId = "demo-user"; // In real app, get from session
+      const updates = req.body;
+      console.log("Profile update request:", updates);
+      
+      // Mock successful update
+      const updatedProfile = {
+        id: userId,
+        email: "user@example.com",
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Change password endpoint
+  app.post("/api/auth/change-password", async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      console.log("Password change request received");
+      
+      // Validate input
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Current password and new password are required" 
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ 
+          success: false,
+          message: "New password must be at least 6 characters long" 
+        });
+      }
+      
+      // For development - just return success
+      res.json({ 
+        success: true, 
+        message: "Password changed successfully" 
+      });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to change password" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -427,6 +427,64 @@ export class DatabaseStorage implements IStorage {
     return this.rewards.get(userId) || [];
   }
 
+  async handleButtonClick(userId: string, date: string, buttonNumber: number): Promise<any> {
+    console.log(`Button ${buttonNumber} clicked for user ${userId} on ${date}`);
+    
+    // Get or create today's check-in
+    const checkInKey = `${userId}_${date}`;
+    let todayCheckin = this.checkins.get(checkInKey);
+    
+    if (!todayCheckin) {
+      todayCheckin = {
+        id: `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId,
+        date,
+        buttonClicks: [],
+        clickCount: 0,
+        completed: false,
+        adsShown: 0,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    // Add the button click
+    const clickTime = new Date().toISOString();
+    const cooldownTime = new Date(Date.now() + 60000).toISOString(); // 1 minute cooldown
+
+    todayCheckin.buttonClicks.push({
+      buttonNumber,
+      clickedAt: clickTime,
+      adShown: true,
+      cooldownUntil: cooldownTime
+    });
+    
+    todayCheckin.clickCount += 1;
+    todayCheckin.adsShown += 1;
+    todayCheckin.lastClickAt = clickTime;
+
+    // Check if all 10 buttons have been clicked
+    if (todayCheckin.clickCount >= 10) {
+      todayCheckin.completed = true;
+      todayCheckin.completedAt = clickTime;
+      
+      // Update streak
+      await this.updateUserStreak(userId, date);
+    }
+
+    this.checkins.set(checkInKey, todayCheckin);
+
+    return {
+      success: true,
+      buttonNumber,
+      clickedAt: clickTime,
+      cooldownUntil: cooldownTime,
+      message: `Button ${buttonNumber} clicked successfully! Wait 1 minute before next click.`,
+      adShown: true,
+      completed: todayCheckin.completed,
+      totalClicks: todayCheckin.clickCount
+    };
+  }
+
   // New methods for profile and referral system
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     // Mock profile data for now
