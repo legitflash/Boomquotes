@@ -49,18 +49,9 @@ export function MonetagBanner({ position = 'bottom', size = 'responsive' }: Mone
     : 'bottom-0 border-t mb-12'; // mb-12 to account for social bar
 
   return (
-    <div className={`fixed left-0 right-0 z-30 bg-gray-50 ${positionClasses}`}>
-      {/* Fallback banner for development/testing - minimal and non-intrusive */}
-      {!isLoaded && (
-        <div className={`w-full ${bannerSizes[size]} flex items-center justify-center bg-gray-100 border-t border-gray-200`}>
-          <div className="text-center text-gray-600">
-            <p className="text-xs">Ad Space</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Monetag Banner will be inserted here */}
-      <div id="monetag-banner" className={`monetag-banner ${bannerSizes[size]} w-full`} />
+    <div className={`fixed left-0 right-0 z-30 bg-transparent ${positionClasses}`}>
+      {/* Monetag Banner will be inserted here - only show when script loads */}
+      <div id="monetag-banner" className={`monetag-banner ${bannerSizes[size]} w-full`} style={{ display: isLoaded ? 'block' : 'none' }} />
       
       <style>{`
         .monetag-banner {

@@ -43,31 +43,8 @@ export function AdsterraSocialBar({ onAdClick, visible = true }: AdsterraSocialB
 
   return (
     <div className="adsterra-social-bar-container">
-      {/* Fallback social bar for development/testing - minimal */}
-      {!isLoaded && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-2 shadow-sm">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="text-xs text-gray-600">Daily Check-in Available</span>
-              <button 
-                onClick={onAdClick}
-                className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
-              >
-                Check In
-              </button>
-            </div>
-            <button 
-              className="text-gray-400 hover:text-gray-600 text-sm"
-              onClick={() => {/* Handle close */}}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Adsterra Social Bar will be inserted here */}
-      <div id="adsterra-social-bar" className="adsterra-social-bar" />
+      {/* Adsterra Social Bar will be inserted here - only show when script loads */}
+      <div id="adsterra-social-bar" className="adsterra-social-bar" style={{ display: isLoaded ? 'block' : 'none' }} />
       
       <style>{`
         .adsterra-social-bar {

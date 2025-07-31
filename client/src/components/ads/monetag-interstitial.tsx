@@ -82,7 +82,7 @@ export function MonetagInterstitial({ onShow, onClose, trigger = 'pageload' }: M
     showInterstitial();
   };
 
-  if (!shouldShow) {
+  if (!shouldShow || !isLoaded) {
     return trigger === 'manual' ? (
       <button onClick={triggerInterstitial} style={{ display: 'none' }} />
     ) : null;
@@ -90,8 +90,8 @@ export function MonetagInterstitial({ onShow, onClose, trigger = 'pageload' }: M
 
   return (
     <>
-      {/* Fallback interstitial for development/testing */}
-      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      {/* Only show interstitial when ads actually load */}
+      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" style={{ display: isLoaded ? 'flex' : 'none' }}>
         <div className="bg-white rounded-xl max-w-md w-full mx-auto shadow-2xl overflow-hidden animate-scale-in">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4">

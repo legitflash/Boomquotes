@@ -34,18 +34,18 @@ export function AdLayout({
 
   return (
     <div className="ad-layout relative min-h-screen">
-      {/* Main content with proper spacing for ads */}
-      <div className="content-wrapper pb-20 pt-0">
+      {/* Main content without intrusive ad spacing */}
+      <div className="content-wrapper">
         {children}
       </div>
       
-      {/* Monetag Banner at bottom - appears above social bar */}
+      {/* Monetag Banner at bottom - only visible when ads load */}
       <MonetagBanner 
         position="bottom" 
         size={isMobile ? 'mobile' : 'responsive'} 
       />
       
-      {/* Adsterra Social Bar - always at very bottom */}
+      {/* Adsterra Social Bar - only visible when ads load */}
       <AdsterraSocialBar 
         onAdClick={onSocialBarClick}
         visible={true}
@@ -90,16 +90,8 @@ export function AdLayout({
         }
         
         .content-wrapper {
-          padding-bottom: 120px; /* Space for banner + social bar */
-          min-height: calc(100vh - 120px);
-        }
-        
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-          .content-wrapper {
-            padding-bottom: 100px; /* Reduced spacing for mobile */
-            min-height: calc(100vh - 100px);
-          }
+          padding-bottom: 2rem; /* Minimal bottom padding */
+          min-height: 100vh;
         }
       `}</style>
     </div>

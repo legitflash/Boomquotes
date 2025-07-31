@@ -55,35 +55,8 @@ export function AdsterraPushAd({ position = 'top-right', delay = 3000 }: Adsterr
 
   return (
     <>
-      {/* Fallback push ad for development/testing */}
-      {!isLoaded && (
-        <div className={`fixed ${positionClasses[position]} z-40 max-w-sm`}>
-          <div className="bg-white rounded-lg shadow-xl border overflow-hidden animate-slide-in">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-medium text-sm">💎 Special Offer!</h3>
-                <button 
-                  onClick={() => setIsVisible(false)}
-                  className="text-white/80 hover:text-white text-lg leading-none"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            <div className="p-4">
-              <p className="text-gray-700 text-sm mb-3">
-                Get premium access to exclusive quotes and messages! 
-              </p>
-              <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors">
-                Learn More
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Adsterra Push Ad will be inserted here */}
-      <div id="adsterra-push-ad" className="adsterra-push-ad" />
+      {/* Adsterra Push Ad will be inserted here - only show when script loads */}
+      <div id="adsterra-push-ad" className="adsterra-push-ad" style={{ display: isLoaded ? 'block' : 'none' }} />
       
       <style>{`
         @keyframes slide-in {
