@@ -9,9 +9,10 @@ import { SplashScreen } from "@/components/splash-screen";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import DailyCheckIn from "@/pages/daily-checkin";
-import Profile from "@/pages/profile";
+import EnhancedProfile from "@/pages/enhanced-profile";
 import Bookmarks from "@/pages/bookmarks";
 import Invite from "@/pages/invite";
+import Rewards from "@/pages/rewards";
 import QuotePage from "@/pages/quote-page";
 import TermsOfService from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
@@ -22,9 +23,10 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/daily" component={DailyCheckIn} />
-      <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/profile" component={EnhancedProfile} />
       <ProtectedRoute path="/bookmarks" component={Bookmarks} />
       <ProtectedRoute path="/invite" component={Invite} />
+      <ProtectedRoute path="/rewards" component={Rewards} />
       <ProtectedRoute path="/quote" component={QuotePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/terms" component={TermsOfService} />

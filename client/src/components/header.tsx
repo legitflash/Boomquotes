@@ -11,6 +11,7 @@ const navItems = [
   { label: "Discover", href: "/" },
   { label: "Daily Check-In", href: "/daily" },
   { label: "Bookmarks", href: "/bookmarks" },
+  { label: "Rewards", href: "/rewards" },
   { label: "Invite & Earn", href: "/invite" },
 ];
 
