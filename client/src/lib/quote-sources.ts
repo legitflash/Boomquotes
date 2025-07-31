@@ -240,45 +240,52 @@ export class QuoteAggregator {
     // Randomize source order for variety
     const shuffledSources = enabledSources.sort(() => Math.random() - 0.5);
 
-    for (const source of shuffledSources) {
+    const promises = shuffledSources.map(async (source): Promise<ExternalQuote | null> => {
       try {
         switch (source.name) {
           case "quotable":
             try {
               const popularQuotes = await QuotableExtendedAPI.getPopularQuotes();
               if (popularQuotes.length === 0) {
-                console.warn("No popular quotes available from Quotable");
-                continue;
+                return null;
               }
               return popularQuotes[Math.floor(Math.random() * popularQuotes.length)];
             } catch (error) {
-              console.warn("Quotable source failed:", error);
-              continue;
+              return null;
             }
           case "zenquotes":
-            // Already implemented in main QuotesAPI
-            continue;
+            // Skip for now
+            return null;
           case "goquotes":
             try {
               return await GoQuotesAPI.getRandomQuote();
             } catch (error) {
-              console.warn("GoQuotes source failed:", error);
-              continue;
+              return null;
             }
           case "stoicquotes":
             try {
               return await StoicQuotesAPI.getRandomQuote();
             } catch (error) {
-              console.warn("StoicQuotes source failed:", error);
-              continue;
+              return null;
             }
           default:
-            continue;
+            return null;
         }
       } catch (error) {
-        console.warn(`Quote source ${source.name} failed:`, error);
-        continue;
+        return null;
       }
+    });
+
+    // Wait for all promises to settle and find the first successful one
+    try {
+      const results = await Promise.allSettled(promises);
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+          return result.value;
+        }
+      }
+    } catch (error) {
+      console.warn("Promise.allSettled failed:", error);
     }
 
     throw new Error("All quote sources failed");

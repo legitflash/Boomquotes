@@ -37,19 +37,24 @@ export default function Home() {
   const randomQuoteMutation = useMutation({
     mutationFn: async () => {
       try {
-        // Try multiple quote sources for better variety
-        const externalQuote = await QuoteAggregator.getRandomQuoteFromMultipleSources();
-        const mappedQuote = QuotesAPI.mapExternalQuoteToLocal(externalQuote);
+        // Try external sources with proper error handling
+        const externalQuote = await Promise.race([
+          QuoteAggregator.getRandomQuoteFromMultipleSources().catch(() => null),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000))
+        ]);
         
-        // Add to our database
-        const response = await apiRequest("POST", "/api/quotes", mappedQuote);
-        return await response.json();
+        if (externalQuote) {
+          const mappedQuote = QuotesAPI.mapExternalQuoteToLocal(externalQuote);
+          const response = await apiRequest("POST", "/api/quotes", mappedQuote);
+          return await response.json();
+        }
       } catch (error) {
-        console.warn("All external sources failed, using local quote:", error);
-        // Fallback to local random quote
-        const response = await apiRequest("GET", "/api/quotes/random");
-        return await response.json();
+        // Silently catch errors and fall through to local fallback
       }
+      
+      // Always fallback to local random quote
+      const response = await apiRequest("GET", "/api/quotes/random");
+      return await response.json();
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
