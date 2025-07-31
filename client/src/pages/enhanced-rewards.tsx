@@ -330,6 +330,15 @@ export default function EnhancedRewards() {
                 </CardContent>
               </Card>
 
+              {/* Coming Soon Alert */}
+              <Alert className="bg-blue-50 border-blue-200">
+                <Gift className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>Airtime Rewards Coming Soon!</strong> We're finalizing partnerships with global telecom providers. 
+                  Keep earning points through daily check-ins - real airtime rewards will be available after app deployment.
+                </AlertDescription>
+              </Alert>
+
               {/* Phone Number Alert */}
               {!profile?.phone && (
                 <Alert className="border-amber-200 bg-amber-50">

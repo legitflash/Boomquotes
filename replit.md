@@ -9,7 +9,7 @@ Boomquotes is a modern full-stack web application for discovering, sharing, and 
 Preferred communication style: Simple, everyday language.
 Deployment: Vercel with Supabase backend
 Authentication: Supabase Auth with email/password (COMPLETED - working properly)
-Target Users: Global users with worldwide airtime rewards via Reloadly API (170+ countries)
+Target Users: Global users with airtime rewards system (pending business domain for Reloadly API integration)
 Profile Features: Comprehensive editing with country auto-detection, phone code auto-fill, age, gender, password change
 Rewards System: Separate dedicated rewards page with global airtime distribution
 Quote Features: Refreshable daily quotes with download/bookmark functionality, 3 additional categories
