@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { AdLayout, useInterstitialCheck } from "@/components/ads/ad-layout";
 import Home from "@/pages/home";
 import MessagesPage from "@/pages/messages-page";
+import UnifiedContentPage from "@/pages/unified-content-page";
 import AuthPage from "@/pages/auth-page";
 import DailyCheckIn from "@/pages/daily-checkin";
 import EnhancedProfile from "@/pages/enhanced-profile";
@@ -52,6 +53,7 @@ function Router() {
       <Switch>
         <ProtectedRoute path="/" component={Home} />
         <ProtectedRoute path="/messages" component={MessagesPage} />
+        <ProtectedRoute path="/content" component={UnifiedContentPage} />
         <ProtectedRoute path="/daily" component={DailyCheckIn} />
         <ProtectedRoute path="/profile" component={EnhancedProfile} />
         <ProtectedRoute path="/bookmarks" component={Bookmarks} />

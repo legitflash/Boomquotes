@@ -9,6 +9,8 @@ import { MobileNav } from "./mobile-nav";
 
 const navItems = [
   { label: "Discover", href: "/" },
+  { label: "Messages", href: "/messages" },
+  { label: "All Content", href: "/content" },
   { label: "Daily Check-In", href: "/daily" },
   { label: "Bookmarks", href: "/bookmarks" },
   { label: "Rewards", href: "/rewards" },

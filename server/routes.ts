@@ -363,6 +363,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // UNIFIED CONTENT ENDPOINTS
+  
+  // Get unified content (quotes + messages)
+  app.get("/api/unified-content", async (req, res) => {
+    try {
+      const { category, type } = req.query;
+      let allContent = [];
+      
+      // Get quotes
+      if (!type || type === 'all' || type === 'quotes') {
+        const quotes = storage.getQuotes();
+        const quoteContent = quotes.map(quote => ({
+          ...quote,
+          type: 'quote'
+        }));
+        allContent.push(...quoteContent);
+      }
+      
+      // Get messages
+      if (!type || type === 'all' || type === 'messages') {
+        try {
+          const { getAllMessages } = await import("../messages_comprehensive.js");
+          const messages = getAllMessages();
+          const messageContent = messages.map(msg => ({
+            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            text: msg,
+            category: 'general',
+            type: 'message',
+            source: 'Boomquotes Collection'
+          }));
+          allContent.push(...messageContent);
+          
+          // Add categorized messages
+          const categories = ['good-morning', 'good-night', 'love', 'romantic', 'sad', 'breakup', 'friendship', 'birthday', 'congratulations', 'encouragement', 'thank-you', 'apology'];
+          for (const cat of categories) {
+            try {
+              const { [`get${cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Messages`]: getMessages } = await import("../messages_comprehensive.js");
+              if (getMessages) {
+                const catMessages = getMessages();
+                const catContent = catMessages.map(msg => ({
+                  id: `msg_${cat}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  text: msg,
+                  category: cat,
+                  type: 'message',
+                  source: 'Boomquotes Collection'
+                }));
+                allContent.push(...catContent);
+              }
+            } catch (e) {
+              // Category function doesn't exist, skip
+            }
+          }
+        } catch (error) {
+          console.error("Error loading messages:", error);
+        }
+      }
+      
+      // Filter by category if specified
+      if (category && category !== 'all') {
+        allContent = allContent.filter(item => 
+          item.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+      
+      // Shuffle content for variety
+      allContent = allContent.sort(() => Math.random() - 0.5);
+      
+      res.json(allContent);
+    } catch (error) {
+      console.error("Error fetching unified content:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+  
+  // Get random unified content
+  app.get("/api/unified-content/random", async (req, res) => {
+    try {
+      const { category, type } = req.query;
+      let allContent = [];
+      
+      // Get quotes
+      if (!type || type === 'all' || type === 'quotes') {
+        const quotes = storage.getQuotes();
+        const quoteContent = quotes.map(quote => ({
+          ...quote,
+          type: 'quote'
+        }));
+        allContent.push(...quoteContent);
+      }
+      
+      // Get messages
+      if (!type || type === 'all' || type === 'messages') {
+        try {
+          const { getRandomMessage } = await import("../messages_comprehensive.js");
+          const randomMessage = getRandomMessage();
+          if (randomMessage) {
+            allContent.push({
+              id: `msg_random_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              text: randomMessage,
+              category: 'random',
+              type: 'message',
+              source: 'Boomquotes Collection'
+            });
+          }
+        } catch (error) {
+          console.error("Error loading random message:", error);
+        }
+      }
+      
+      // Filter by category if specified
+      if (category && category !== 'all') {
+        allContent = allContent.filter(item => 
+          item.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+      
+      if (allContent.length === 0) {
+        return res.status(404).json({ message: "No content available" });
+      }
+      
+      const randomIndex = Math.floor(Math.random() * allContent.length);
+      res.json(allContent[randomIndex]);
+    } catch (error) {
+      console.error("Error fetching random unified content:", error);
+      res.status(500).json({ message: "Failed to fetch random content" });
+    }
+  });
+  
+  // Get unified favorites
+  app.get("/api/unified-favorites", (req, res) => {
+    try {
+      const quoteFavorites = storage.getFavorites().map(fav => ({
+        ...fav,
+        type: 'quote'
+      }));
+      const messageFavorites = storage.getMessageFavorites().map(fav => ({
+        ...fav,
+        type: 'message'
+      }));
+      
+      const allFavorites = [...quoteFavorites, ...messageFavorites];
+      res.json(allFavorites);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch unified favorites" });
+    }
+  });
+  
+  // Add unified favorite
+  app.post("/api/unified-favorites", (req, res) => {
+    try {
+      const item = req.body;
+      
+      if (item.type === 'quote') {
+        storage.addFavorite({
+          id: item.id,
+          text: item.text,
+          author: item.author || 'Unknown',
+          category: item.category || 'general',
+          source: item.source || 'favorites'
+        });
+      } else if (item.type === 'message') {
+        storage.addMessageFavorite({
+          id: item.id,
+          text: item.text,
+          category: item.category || 'general',
+          source: item.source || 'Boomquotes Collection'
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add unified favorite" });
+    }
+  });
+  
+  // Remove unified favorite
+  app.delete("/api/unified-favorites/:itemId", (req, res) => {
+    try {
+      const { itemId } = req.params;
+      
+      // Try removing from both quote and message favorites
+      const quoteRemoved = storage.removeFavorite(itemId);
+      const messageRemoved = storage.removeMessageFavorite(itemId);
+      
+      if (!quoteRemoved && !messageRemoved) {
+        return res.status(404).json({ message: "Favorite not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove unified favorite" });
+    }
+  });
+
   // Check-in System Routes
   
   // Get today's check-in status
