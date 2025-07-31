@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
+import { NotificationSettings } from "@/components/notification-settings";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { User, Phone, Trophy, Gift, CheckCircle, Clock } from "lucide-react";
@@ -448,6 +449,11 @@ export default function Profile() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Notification Settings */}
+        <div className="mt-8">
+          <NotificationSettings />
         </div>
 
         {/* Rewards History */}

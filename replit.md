@@ -75,6 +75,7 @@ Target Users: Global users with Nigerian airtime rewards system
 4. **Random Quote**: Attempts external API fetch, falls back to local random selection
 5. **Favorites Management**: Client optimistically updates UI, syncs with server
 6. **Share Actions**: Native Web Share API with social media fallbacks
+7. **Push Notifications**: Service worker handles daily quote notifications with browser permission management
 
 ## External Dependencies
 

@@ -115,6 +115,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification subscription endpoints
+  app.post("/api/notifications/subscribe", async (req, res) => {
+    try {
+      const { subscription, timestamp } = req.body;
+      console.log('Push subscription received:', subscription?.endpoint);
+      res.json({ 
+        success: true, 
+        message: "Subscription saved successfully" 
+      });
+    } catch (error) {
+      console.error('Error saving subscription:', error);
+      res.status(500).json({ message: "Failed to save subscription" });
+    }
+  });
+
+  app.post("/api/notifications/unsubscribe", async (req, res) => {
+    try {
+      const { subscription } = req.body;
+      console.log('Push unsubscription received:', subscription?.endpoint);
+      res.json({ 
+        success: true, 
+        message: "Unsubscribed successfully" 
+      });
+    } catch (error) {
+      console.error('Error removing subscription:', error);
+      res.status(500).json({ message: "Failed to unsubscribe" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
