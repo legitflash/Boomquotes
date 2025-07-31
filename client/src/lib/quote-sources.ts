@@ -126,29 +126,65 @@ export class GoQuotesAPI {
   private static BASE_URL = "https://goquotes-api.herokuapp.com/api/v1";
 
   static async getRandomQuote(): Promise<ExternalQuote> {
-    const response = await fetch(`${this.BASE_URL}/random`);
-    if (!response.ok) throw new Error("GoQuotes API failed");
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const data = await response.json();
-    return {
-      content: data.text,
-      author: data.author,
-      tags: [data.tag || 'general'],
-      source: "goquotes-api.herokuapp.com"
-    };
+      const response = await fetch(`${this.BASE_URL}/random`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`GoQuotes API failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        content: data.text,
+        author: data.author,
+        tags: [data.tag || 'general'],
+        source: "goquotes-api.herokuapp.com"
+      };
+    } catch (error) {
+      console.warn('GoQuotes API error:', error);
+      throw error;
+    }
   }
 
   static async getQuotesByTag(tag: string): Promise<ExternalQuote[]> {
-    const response = await fetch(`${this.BASE_URL}/quotes/tag?name=${tag}`);
-    if (!response.ok) throw new Error("GoQuotes tag search failed");
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const data = await response.json();
-    return (data.quotes || []).slice(0, 10).map((quote: any) => ({
-      content: quote.text,
-      author: quote.author,
-      tags: [quote.tag || tag],
-      source: "goquotes-api.herokuapp.com"
-    }));
+      const response = await fetch(`${this.BASE_URL}/quotes/tag?name=${tag}`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`GoQuotes tag search failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return (data.quotes || []).slice(0, 10).map((quote: any) => ({
+        content: quote.text,
+        author: quote.author,
+        tags: [quote.tag || tag],
+        source: "goquotes-api.herokuapp.com"
+      }));
+    } catch (error) {
+      console.warn('GoQuotes tag search error:', error);
+      return [];
+    }
   }
 }
 
@@ -157,16 +193,34 @@ export class StoicQuotesAPI {
   private static BASE_URL = "https://stoicquotesapi.com/v1";
 
   static async getRandomQuote(): Promise<ExternalQuote> {
-    const response = await fetch(`${this.BASE_URL}/random`);
-    if (!response.ok) throw new Error("Stoic Quotes API failed");
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const data = await response.json();
-    return {
-      content: data.text,
-      author: data.author,
-      tags: ['wisdom', 'philosophy', 'stoic'],
-      source: "stoicquotesapi.com"
-    };
+      const response = await fetch(`${this.BASE_URL}/random`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Stoic Quotes API failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        content: data.text,
+        author: data.author,
+        tags: ['wisdom', 'philosophy', 'stoic'],
+        source: "stoicquotesapi.com"
+      };
+    } catch (error) {
+      console.warn('Stoic Quotes API error:', error);
+      throw error;
+    }
   }
 }
 

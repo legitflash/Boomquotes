@@ -1,6 +1,6 @@
 import { Facebook, Twitter, Instagram, Link2, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Quote } from "@shared/schema";
 
@@ -82,7 +82,9 @@ export function ShareModal({ isOpen, onClose, quote }: ShareModalProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">Share this quote</DialogTitle>
-          <p className="text-center text-neutral-500">Spread the inspiration</p>
+          <DialogDescription className="text-center text-neutral-500">
+            Spread the inspiration
+          </DialogDescription>
         </DialogHeader>
         
         <div className="grid grid-cols-2 gap-3">
