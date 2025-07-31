@@ -91,13 +91,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get random message (must come before category route)
+  app.get("/api/messages/random", async (req, res) => {
+    try {
+      const { category } = req.query;
+      const { getRandomMessage, getAllMessages } = await import("../messages_comprehensive.js");
+      
+      let randomMessage;
+      if (category && category !== 'all') {
+        randomMessage = getRandomMessage(category);
+      } else {
+        // Get random from all messages
+        const allMessages = getAllMessages();
+        if (allMessages.length > 0) {
+          const randomIndex = Math.floor(Math.random() * allMessages.length);
+          randomMessage = {
+            id: `message_${Date.now()}_random_${Math.random().toString(36).substr(2, 9)}`,
+            text: allMessages[randomIndex],
+            category: 'random'
+          };
+        }
+      }
+      
+      if (!randomMessage) {
+        return res.status(404).json({ message: "No messages available" });
+      }
+      
+      res.json(randomMessage);
+    } catch (error) {
+      console.error("Error fetching random message:", error);
+      res.status(500).json({ message: "Failed to fetch random message" });
+    }
+  });
+
   // Get messages by category
   app.get("/api/messages/:category", async (req, res) => {
     try {
       const { category } = req.params;
       
       // Handle special endpoints that shouldn't be treated as categories
-      if (category === 'all' || category === 'random' || category === 'daily' || category === 'categories') {
+      if (category === 'all' || category === 'daily' || category === 'categories') {
         return res.status(400).json({ message: "Invalid category endpoint" });
       }
       

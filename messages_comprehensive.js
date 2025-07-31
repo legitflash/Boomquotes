@@ -790,8 +790,8 @@ function getCategoriesWithCounts() {
   return categories;
 }
 
-// Export all functions
-module.exports = {
+// Export all functions using ES module syntax
+export {
   messages,
   getAllMessages,
   getCategoryMessages,
