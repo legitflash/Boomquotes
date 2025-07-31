@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import DailyCheckIn from "@/pages/daily-checkin";
+import Profile from "@/pages/profile";
 import TermsOfService from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/daily" component={DailyCheckIn} />
+      <ProtectedRoute path="/profile" component={Profile} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/terms" component={TermsOfService} />
       <Route component={NotFound} />
