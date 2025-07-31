@@ -69,7 +69,7 @@ export default function AuthPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               Discover inspiring quotes, complete daily check-ins, and earn rewards. 
-              Join thousands getting motivated every day worldwide.
+              Join thousands getting motivated every day.
             </p>
           </div>
           
@@ -85,7 +85,7 @@ export default function AuthPage() {
             </div>
             <div className="flex items-center space-x-3 text-gray-700">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <span>Nigerian users earn ₦500 airtime after 30 check-ins</span>
+              <span>Earn rewards after 30 completed check-ins</span>
             </div>
             <div className="flex items-center space-x-3 text-primary font-medium">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -201,24 +201,7 @@ export default function AuthPage() {
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-phone">
-                        Phone Number 
-                        <span className="text-sm text-primary font-normal ml-1">(for airtime rewards)</span>
-                      </Label>
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        placeholder="+234 802 123 4567"
-                        value={signupPhone}
-                        onChange={(e) => setSignupPhone(e.target.value)}
-                        className="h-11"
-                      />
-                      <p className="text-xs text-gray-500">
-                        Required to receive airtime rewards
-                      </p>
-                    </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-start space-x-2">
                         <Checkbox 

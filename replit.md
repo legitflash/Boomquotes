@@ -9,7 +9,7 @@ Boomquotes is a modern full-stack web application for discovering, sharing, and 
 Preferred communication style: Simple, everyday language.
 Deployment: Vercel with Supabase backend
 Authentication: Supabase Auth with email/password
-Target Users: Nigerian users with airtime rewards system
+Target Users: Global users with Nigerian airtime rewards system
 
 ## System Architecture
 
