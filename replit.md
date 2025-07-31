@@ -30,11 +30,16 @@ Target Users: Global users with Nigerian airtime rewards system
 - **Development**: Hot reloading with Vite middleware integration
 
 ### Database Design
-- **Primary Database**: PostgreSQL (configured for Neon serverless)
-- **Schema Management**: Drizzle Kit for migrations
-- **Tables**:
-  - `quotes`: Stores quote text, author, category, and source
-  - `favorites`: Stores user favorite quotes with full quote data as JSONB
+- **Primary Database**: Supabase PostgreSQL with Row Level Security
+- **Schema Management**: Direct SQL with functions and triggers
+- **Core Tables**:
+  - `user_profiles`: User data including Nigerian status for rewards
+  - `quotes`: Inspirational quotes with categories and sources
+  - `favorites`: User's saved quotes with JSONB data
+  - `daily_checkins`: 5-click check-in system with 2-minute cooldowns
+  - `checkin_streaks`: User streak tracking and statistics
+  - `rewards`: ₦500 airtime rewards for 30-day Nigerian streaks
+  - `reward_claims`: Payout tracking and transaction history
 
 ## Key Components
 
