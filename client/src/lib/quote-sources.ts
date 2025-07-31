@@ -84,16 +84,21 @@ export class QuotableExtendedAPI {
   }
 
   static async getPopularQuotes(): Promise<ExternalQuote[]> {
-    const response = await fetch(`${this.BASE_URL}/quotes?sortBy=datePopular&limit=20`);
-    if (!response.ok) throw new Error("Quotable popular quotes failed");
-    
-    const data = await response.json();
-    return (data.results || []).map((quote: any) => ({
-      content: quote.content,
-      author: quote.author,
-      tags: quote.tags || [],
-      source: "quotable.io"
-    }));
+    try {
+      const response = await fetch(`${this.BASE_URL}/quotes?sortBy=datePopular&limit=20`);
+      if (!response.ok) throw new Error("Quotable popular quotes failed");
+      
+      const data = await response.json();
+      return (data.results || []).map((quote: any) => ({
+        content: quote.content,
+        author: quote.author,
+        tags: quote.tags || [],
+        source: "quotable.io"
+      }));
+    } catch (error) {
+      console.warn('Quotable popular quotes failed:', error);
+      return [];
+    }
   }
 }
 
@@ -166,9 +171,9 @@ export class QuoteAggregator {
       try {
         switch (source.name) {
           case "quotable":
-            return await QuotableExtendedAPI.getPopularQuotes().then(quotes => 
-              quotes[Math.floor(Math.random() * quotes.length)]
-            );
+            const popularQuotes = await QuotableExtendedAPI.getPopularQuotes();
+            if (popularQuotes.length === 0) throw new Error("No popular quotes available");
+            return popularQuotes[Math.floor(Math.random() * popularQuotes.length)];
           case "zenquotes":
             // Already implemented in main QuotesAPI
             continue;

@@ -28,6 +28,15 @@ export class SimpleStorage {
     return newQuote;
   }
 
+  addQuote(quote: Quote): Quote {
+    // Check if quote already exists to avoid duplicates
+    const exists = this.quotes.some(q => q.id === quote.id || (q.text === quote.text && q.author === quote.author));
+    if (!exists) {
+      this.quotes.push(quote);
+    }
+    return quote;
+  }
+
   // Favorite methods (quotes)
   getFavorites(): Quote[] {
     return this.favorites;

@@ -14,7 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no quotes in storage, try to get from content expander
       if (quotes.length === 0) {
         try {
-          const { getExpandedContent } = await import("../server/content-expander.js");
+          const { getExpandedContent } = await import("./content-expander.js");
           const expandedQuotes = getExpandedContent('all', 'quote', 100);
           quotes = expandedQuotes;
           
@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (category && category !== 'all') {
         // Try expanded content for specific category
         try {
-          const { getExpandedContent } = await import("../server/content-expander.js");
+          const { getExpandedContent } = await import("./content-expander.js");
           const categoryQuotes = getExpandedContent(category, 'quote', 100);
           if (categoryQuotes.length > 0) {
             return res.json(categoryQuotes);
