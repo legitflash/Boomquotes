@@ -25,15 +25,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
+    // Simplified auth check - simulate authentication
+    const checkAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn('Supabase auth error:', error);
+          // Set loading to false even if auth fails so app can proceed
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.warn('Auth initialization error:', error);
+        // Always set loading to false so app doesn't get stuck
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    checkAuth();
 
     // Listen for auth changes
     const {

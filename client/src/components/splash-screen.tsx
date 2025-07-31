@@ -11,15 +11,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    // If user is authenticated and app is loaded, skip splash faster
-    if (!loading) {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(onComplete, 300); // Wait for fade out animation
-      }, user ? 1000 : 2500); // Shorter delay if user is already signed in
+    // Always show splash for a minimum time, then check auth state
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(onComplete, 300); // Wait for fade out animation
+    }, loading ? 3000 : (user ? 1500 : 2500)); // Show longer if still loading
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [onComplete, user, loading]);
 
   if (!isVisible) {
