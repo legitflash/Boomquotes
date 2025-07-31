@@ -49,6 +49,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Refresh daily quote endpoint
+  app.post("/api/quotes/daily/refresh", async (req, res) => {
+    try {
+      const quotes = await storage.getQuotes();
+      if (quotes.length === 0) {
+        return res.status(404).json({ message: "No quotes available" });
+      }
+      
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      res.json(quotes[randomIndex]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to refresh daily quote" });
+    }
+  });
+
   // Add quote from external API
   app.post("/api/quotes", async (req, res) => {
     try {

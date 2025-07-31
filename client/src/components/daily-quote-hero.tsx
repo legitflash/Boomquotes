@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { Share, Heart, Quote as QuoteIcon } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Share, Heart, Quote as QuoteIcon, RefreshCw, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Quote } from "@shared/schema";
 
 interface DailyQuoteHeroProps {
@@ -11,9 +13,89 @@ interface DailyQuoteHeroProps {
 }
 
 export function DailyQuoteHero({ onShare, onToggleFavorite, isFavorite }: DailyQuoteHeroProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: quote, isLoading } = useQuery<Quote>({
     queryKey: ["/api/quotes/daily"],
   });
+
+  const refreshDailyQuoteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/quotes/daily/refresh");
+      return response.json();
+    },
+    onSuccess: (newQuote) => {
+      queryClient.setQueryData(["/api/quotes/daily"], newQuote);
+      toast({
+        title: "Quote refreshed!",
+        description: "Enjoy your new daily quote.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Refresh failed",
+        description: "Could not get a new quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDownload = (quote: Quote) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#6366f1');
+    gradient.addColorStop(1, '#8b5cf6');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Quote text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    
+    const words = quote.text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine + word + ' ';
+      if (ctx.measureText(testLine).width > canvas.width - 100 && currentLine) {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        currentLine = testLine;
+      }
+    }
+    lines.push(currentLine.trim());
+
+    const startY = (canvas.height - (lines.length * 50)) / 2;
+    lines.forEach((line, index) => {
+      ctx.fillText(line, canvas.width / 2, startY + (index * 50));
+    });
+
+    // Author
+    ctx.font = '24px Arial';
+    ctx.fillText(`— ${quote.author}`, canvas.width / 2, startY + (lines.length * 50) + 50);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `quote-${Date.now()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+
+    toast({
+      title: "Quote downloaded!",
+      description: "Quote image saved to your device.",
+    });
+  };
 
   const getCategoryColor = (category: string) => {
     const colors = {

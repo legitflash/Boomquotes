@@ -18,6 +18,9 @@ const categories = [
   { id: "politics", label: "Politics", color: "category-politics" },
   { id: "social", label: "Social", color: "category-social" },
   { id: "funny", label: "Funny", color: "category-funny" },
+  { id: "success", label: "Success", color: "category-success" },
+  { id: "inspiration", label: "Inspiration", color: "category-inspiration" },
+  { id: "mindfulness", label: "Mindfulness", color: "category-mindfulness" },
 ];
 
 export function CategoryFilters({ activeCategory, onCategoryChange, onRandomQuote }: CategoryFiltersProps) {
