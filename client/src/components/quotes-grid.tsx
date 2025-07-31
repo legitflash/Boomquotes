@@ -13,7 +13,15 @@ interface QuotesGridProps {
 
 export function QuotesGrid({ category, onShare, onToggleFavorite, isFavorite }: QuotesGridProps) {
   const { data: quotes, isLoading } = useQuery<Quote[]>({
-    queryKey: ["/api/quotes", category === "all" ? undefined : category],
+    queryKey: ["/api/quotes", category],
+    queryFn: async () => {
+      const url = category === "all" ? "/api/quotes" : `/api/quotes?category=${category}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch quotes');
+      }
+      return response.json();
+    },
   });
 
   if (isLoading) {
