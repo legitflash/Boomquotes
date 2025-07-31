@@ -222,9 +222,14 @@ export default function AuthPage() {
                         />
                         <Label htmlFor="terms-accept" className="text-sm leading-5">
                           I accept the{" "}
-                          <button type="button" className="text-primary underline hover:no-underline">
+                          <a 
+                            href="/terms" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                          >
                             Terms of Service
-                          </button>
+                          </a>
                         </Label>
                       </div>
                     </div>
