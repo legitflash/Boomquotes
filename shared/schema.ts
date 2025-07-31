@@ -175,6 +175,57 @@ export const insertCheckInSchema = createInsertSchema(checkIns).omit({
   createdAt: true,
 });
 
+// Additional interfaces for button clicks and payout tracking
+export interface ButtonClick {
+  buttonNumber: number;
+  timestamp: string;
+  cooldownUntil: string;
+}
+
+export interface PayoutHistory {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  localAmount?: number;
+  localCurrency?: string;
+  phone: string;
+  country: string;
+  operatorId?: string;
+  operatorName?: string;
+  status: 'pending' | 'processing' | 'success' | 'failed';
+  transactionId?: string;
+  failureReason?: string;
+  retryCount: number;
+  processedAt?: string;
+  createdAt: string;
+}
+
+export interface InsertPayoutHistory {
+  userId: string;
+  amount: number;
+  currency?: string;
+  localAmount?: number;
+  localCurrency?: string;
+  phone: string;
+  country: string;
+  operatorId?: string;
+  operatorName?: string;
+  status?: 'pending' | 'processing' | 'success' | 'failed';
+  retryCount?: number;
+}
+
+// Types for TypeScript
+export type Quote = typeof quotes.$inferSelect;
+export type InsertQuote = typeof quotes.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+export type Favorite = typeof favorites.$inferSelect;
+export type InsertFavorite = typeof favorites.$inferInsert;
+export type CheckIn = typeof checkIns.$inferSelect;
+export type CheckinStreak = typeof checkinStreaks.$inferSelect;
+export type AirtimeReward = typeof airtimeRewards.$inferSelect;
+
 export const insertCheckinStreakSchema = createInsertSchema(checkinStreaks).omit({
   id: true,
   updatedAt: true,
