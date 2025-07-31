@@ -5,6 +5,8 @@ export class SimpleStorage {
   private quotes: Quote[] = [];
   private favorites: Quote[] = [];
   private messageFavorites: any[] = [];
+  private checkins: Map<string, any> = new Map();
+  private streaks: Map<string, any> = new Map();
 
   constructor() {
     this.seedQuotes();
@@ -60,6 +62,76 @@ export class SimpleStorage {
 
   isFavorite(quoteId: string): boolean {
     return this.favorites.some(fav => fav.id === quoteId);
+  }
+
+  // Check-in methods (required for the app to work)
+  async handleButtonClick(userId: string, date: string, buttonNumber: number): Promise<any> {
+    console.log(`Button ${buttonNumber} clicked for user ${userId} on ${date}`);
+    
+    // Get or create today's check-in
+    const checkInKey = `${userId}_${date}`;
+    let todayCheckin = this.checkins.get(checkInKey);
+    
+    if (!todayCheckin) {
+      todayCheckin = {
+        id: `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId,
+        date,
+        buttonClicks: [],
+        clickCount: 0,
+        completed: false,
+        adsShown: 0,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    // Add the button click
+    const clickTime = new Date().toISOString();
+    const cooldownTime = new Date(Date.now() + 60000).toISOString(); // 1 minute cooldown
+
+    todayCheckin.buttonClicks.push({
+      buttonNumber,
+      clickedAt: clickTime,
+      adShown: true,
+      cooldownUntil: cooldownTime
+    });
+    
+    todayCheckin.clickCount += 1;
+    todayCheckin.adsShown += 1;
+    todayCheckin.lastClickAt = clickTime;
+
+    // Check if all 10 buttons have been clicked
+    if (todayCheckin.clickCount >= 10) {
+      todayCheckin.completed = true;
+      todayCheckin.completedAt = clickTime;
+    }
+
+    this.checkins.set(checkInKey, todayCheckin);
+
+    return {
+      success: true,
+      buttonNumber,
+      clickedAt: clickTime,
+      cooldownUntil: cooldownTime,
+      message: `Button ${buttonNumber} clicked successfully! Wait 1 minute before next click.`,
+      adShown: true,
+      completed: todayCheckin.completed,
+      totalClicks: todayCheckin.clickCount
+    };
+  }
+
+  async getTodayCheckin(userId: string, date: string): Promise<any> {
+    const checkInKey = `${userId}_${date}`;
+    return this.checkins.get(checkInKey) || null;
+  }
+
+  async getUserStreak(userId: string): Promise<any> {
+    return this.streaks.get(userId) || {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalDays: 0,
+      lastCheckinDate: null
+    };
   }
 
   // Message favorite methods

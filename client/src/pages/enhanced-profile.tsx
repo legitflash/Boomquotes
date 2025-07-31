@@ -161,6 +161,15 @@ export default function EnhancedProfile() {
       toast({
         title: "Missing information",
         description: "Address is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!address.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Address is required.",
         variant: "destructive", 
       });
       return;
