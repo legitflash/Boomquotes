@@ -10,6 +10,8 @@ import { MobileNav } from "./mobile-nav";
 const navItems = [
   { label: "Discover", href: "/" },
   { label: "Daily Check-In", href: "/daily" },
+  { label: "Bookmarks", href: "/bookmarks" },
+  { label: "Invite & Earn", href: "/invite" },
 ];
 
 export function Header() {
@@ -82,7 +84,7 @@ export function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                        <span>Profile Settings</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>

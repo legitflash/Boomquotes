@@ -4,273 +4,171 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Header } from "@/components/header";
-import { NotificationSettings } from "@/components/notification-settings";
-import { QuoteSourcesManager } from "@/components/quote-sources-manager";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { User, Phone, Trophy, Gift, CheckCircle, Clock } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { User, Phone, Trophy, Gift, CheckCircle, AlertTriangle, Coins, Users } from "lucide-react";
 
 interface UserProfile {
   id: string;
   email: string;
-  name?: string;
+  fullName?: string;
   phone?: string;
-  country: string;
-  is_nigerian: boolean;
-  created_at: string;
-  updated_at: string;
+  isNigerian: boolean;
+  profileLocked: boolean;
+  referralCode: string;
+  totalReferrals: number;
+  referralEarnings: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface CheckInStatus {
-  current_streak: number;
-  total_checkins: number;
-  longest_streak: number;
+  currentStreak: number;
+  totalCheckins: number;
+  longestStreak: number;
+  canCompleteToday: boolean;
+  nextRewardAt: number;
 }
 
 interface RewardInfo {
   id: string;
   amount: number;
-  status: string;
-  created_at: string;
-  phone_number: string;
+  type: 'checkin' | 'referral';
+  status: 'pending' | 'completed';
+  createdAt: string;
+  description: string;
 }
 
 export default function Profile() {
-  const { user, userProfile, updateProfile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneProvider, setPhoneProvider] = useState("");
-  const [checkinStatus, setCheckinStatus] = useState<CheckInStatus | null>(null);
-  const [rewards, setRewards] = useState<RewardInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchCheckinStatus();
-      fetchRewards();
-    }
-  }, [user]);
+  // Queries
+  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
+    queryKey: ["/api/profile"],
+    enabled: !!user,
+  });
 
-  const fetchProfile = async () => {
-    if (!user) return;
+  const { data: checkinStatus } = useQuery<CheckInStatus>({
+    queryKey: ["/api/checkins/stats"],
+    enabled: !!user,
+  });
 
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+  const { data: rewards = [] } = useQuery<RewardInfo[]>({
+    queryKey: ["/api/rewards"],
+    enabled: !!user,
+  });
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-
-      if (data) {
-        setProfile(data);
-        setName(data.name || "");
-        setPhoneNumber(data.phone || "");
-      } else {
-        // Create profile if it doesn't exist
-        const newProfile = {
-          id: user.id,
-          email: user.email!,
-          country: 'NG',
-          is_nigerian: true
-        };
-        
-        const { data: createdProfile, error: createError } = await supabase
-          .from('user_profiles')
-          .insert(newProfile)
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating profile:', createError);
-        } else {
-          setProfile(createdProfile);
-        }
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCheckinStatus = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase.rpc('get_checkin_status', {
-        p_user_id: user.id
-      });
-
-      if (error) {
-        console.error('Error fetching checkin status:', error);
-        return;
-      }
-
-      setCheckinStatus({
-        current_streak: data.current_streak,
-        total_checkins: data.total_checkins,
-        longest_streak: data.longest_streak
-      });
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  const fetchRewards = async () => {
-    if (!user) return;
-
-    try {
-      const { data } = await supabase
-        .from('rewards')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setRewards(data);
-      }
-    } catch (error) {
-      console.error('Error fetching rewards:', error);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user || !name.trim()) {
+  // Mutations
+  const saveProfileMutation = useMutation({
+    mutationFn: async (data: { fullName: string; phone: string }) => {
+      const response = await apiRequest("PUT", "/api/profile", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
       toast({
-        title: "Missing Information",
-        description: "Please enter your name.",
+        title: "Profile saved",
+        description: "Your profile has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save profile.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const redeemRewardsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/rewards/redeem");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
+      toast({
+        title: "Rewards redeemed",
+        description: "Your airtime has been sent to your phone number.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to redeem rewards.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Initialize form values
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.fullName || "");
+      setPhoneNumber(profile.phone || "");
+    }
+  }, [profile]);
+
+  const handleSaveProfile = () => {
+    if (!fullName.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please enter your full name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please enter your phone number.",
         variant: "destructive",
       });
       return;
     }
 
     // Validate Nigerian phone number
-    if (phoneNumber && !phoneNumber.match(/^\+234[0-9]{10}$/)) {
+    if (!phoneNumber.match(/^\+234[789][01]\d{8}$/)) {
+      setShowWarning(true);
+      return;
+    }
+
+    if (profile?.profileLocked) {
       toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid Nigerian phone number starting with +234.",
+        title: "Profile locked",
+        description: "Your profile cannot be modified after saving.",
         variant: "destructive",
       });
       return;
     }
 
-    setSaving(true);
-
-    try {
-      const updates = {
-        name: name.trim(),
-        phone: phoneNumber || null,
-        is_nigerian: phoneNumber.startsWith('+234'),
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Error updating profile:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save profile. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update local state
-      setProfile(prev => prev ? { 
-        ...prev, 
-        ...updates,
-        phone: updates.phone || undefined 
-      } : null);
-      
-      // Update auth context
-      if (updateProfile) {
-        updateProfile(updates);
-      }
-
-      toast({
-        title: "Profile Saved",
-        description: "Your profile has been updated successfully.",
-      });
-
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    saveProfileMutation.mutate({ fullName: fullName.trim(), phone: phoneNumber.trim() });
   };
 
-  const getProviderFromPhone = (phone: string) => {
-    if (!phone) return "";
-    
-    const number = phone.replace('+234', '');
-    const prefix = number.substring(0, 3);
-    
-    // MTN prefixes
-    if (['803', '806', '813', '814', '816', '903', '906', '913', '916'].includes(prefix)) {
-      return 'MTN';
-    }
-    // Airtel prefixes
-    if (['802', '808', '812', '901', '902', '904', '907', '912'].includes(prefix)) {
-      return 'Airtel';
-    }
-    // Glo prefixes
-    if (['805', '807', '811', '815', '905', '915'].includes(prefix)) {
-      return 'Glo';
-    }
-    // 9mobile prefixes
-    if (['809', '817', '818', '908', '909'].includes(prefix)) {
-      return '9mobile';
-    }
-    
-    return 'Unknown';
-  };
+  const totalEarnings = rewards.reduce((sum, reward) => 
+    reward.status === 'pending' ? sum + reward.amount : sum, 0
+  );
+  const canRedeem = totalEarnings >= 500 && profile?.phone && profile?.fullName;
 
-  const getStreakProgress = () => {
-    if (!checkinStatus) return 0;
-    return Math.min((checkinStatus.current_streak / 30) * 100, 100);
-  };
-
-  const isRewardUnlocked = () => {
-    return checkinStatus && checkinStatus.current_streak >= 30;
-  };
-
-  const hasUnclaimedReward = () => {
-    return rewards.some(reward => reward.status === 'pending' && reward.amount === 500);
-  };
-
-  if (loading) {
+  if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="min-h-screen bg-neutral-50">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your profile...</p>
-            </div>
+          <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         </div>
       </div>
@@ -278,252 +176,244 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-neutral-50">
       <Header />
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Profile</h1>
-          <p className="text-gray-600 text-lg">Manage your account and check your progress</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Profile Settings</h1>
+          <p className="text-gray-600">Manage your account and rewards</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Profile Information */}
-          <Card className="shadow-lg border-0 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-6 w-6 text-blue-600" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>
-                Update your personal details for rewards and notifications
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Email (Read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="bg-gray-50"
-                />
-                <p className="text-xs text-gray-500">Email cannot be changed</p>
+        {/* Warning Alert */}
+        {showWarning && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Important:</strong> Please enter your correct phone number and full name. 
+              Once saved, these details cannot be changed and will be used for all airtime rewards.
+              <div className="mt-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (fullName.trim() && phoneNumber.trim()) {
+                      saveProfileMutation.mutate({ 
+                        fullName: fullName.trim(), 
+                        phone: phoneNumber.trim() 
+                      });
+                    }
+                    setShowWarning(false);
+                  }}
+                  className="mr-2"
+                >
+                  Confirm & Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowWarning(false)}
+                >
+                  Review Details
+                </Button>
               </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
-              {/* Name (Required) */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
+        {/* Profile Form */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>
+              {profile?.profileLocked 
+                ? "Your profile is locked and cannot be modified."
+                : "Required for airtime rewards"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                value={user?.email || ""}
+                disabled
+                className="bg-gray-50"
+              />
+              <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
+            </div>
 
-              {/* Nigerian Phone Number */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">Nigerian Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+2348012345678"
-                  type="tel"
-                />
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Phone className="h-3 w-3" />
-                  Required for airtime rewards
-                </div>
-                
-                {phoneNumber && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      {getProviderFromPhone(phoneNumber)}
-                    </Badge>
-                    {phoneNumber.match(/^\+234[0-9]{10}$/) ? (
-                      <Badge className="bg-green-100 text-green-800">Valid</Badge>
-                    ) : (
-                      <Badge variant="destructive">Invalid format</Badge>
-                    )}
-                  </div>
-                )}
-              </div>
+            <div>
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={profile?.profileLocked}
+              />
+            </div>
 
-              <Button 
-                onClick={handleSaveProfile} 
-                disabled={saving || !name.trim()}
+            <div>
+              <Label htmlFor="phone">Nigerian Phone Number *</Label>
+              <Input
+                id="phone"
+                placeholder="+234XXXXXXXXXX"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                disabled={profile?.profileLocked}
+              />
+              <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                <Phone className="h-3 w-3" />
+                Required for airtime rewards
+              </p>
+            </div>
+
+            {!profile?.profileLocked && (
+              <Button
+                onClick={handleSaveProfile}
+                disabled={saveProfileMutation.isPending}
                 className="w-full"
               >
-                {saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Profile'
-                )}
+                {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
               </Button>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Check-in Progress */}
-          <Card className="shadow-lg border-0 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-yellow-500" />
-                Check-in Progress
-              </CardTitle>
-              <CardDescription>
-                Your daily check-in streak and statistics
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Current Streak */}
+        {/* Check-in Progress */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-600" />
+              Check-in Progress
+            </CardTitle>
+            <CardDescription>Your daily check-in streak and statistics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">
-                  {checkinStatus?.current_streak || 0}
+                <div className="text-3xl font-bold text-blue-600">
+                  {checkinStatus?.currentStreak || 0}
                 </div>
-                <p className="text-gray-600">Current Streak (days)</p>
+                <div className="text-sm text-gray-500">Current Streak</div>
               </div>
-
-              {/* Progress to Reward */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Progress to ₦500 Reward</span>
-                  <span>{Math.min(checkinStatus?.current_streak || 0, 30)}/30 days</span>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">
+                  {checkinStatus?.longestStreak || 0}
                 </div>
-                <Progress value={getStreakProgress()} className="h-3" />
+                <div className="text-sm text-gray-500">Longest Streak</div>
               </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-blue-600">
-                    {checkinStatus?.total_checkins || 0}
-                  </div>
-                  <p className="text-sm text-gray-600">Total Check-ins</p>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">
+                  {checkinStatus?.totalCheckins || 0}
                 </div>
-                
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <Trophy className="h-6 w-6 text-green-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-green-600">
-                    {checkinStatus?.longest_streak || 0}
-                  </div>
-                  <p className="text-sm text-gray-600">Best Streak</p>
-                </div>
+                <div className="text-sm text-gray-500">Total Check-ins</div>
               </div>
-
-              {/* Reward Status */}
-              {isRewardUnlocked() ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Gift className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-800">Reward Unlocked!</span>
-                  </div>
-                  <p className="text-green-700 text-sm">
-                    You've completed 30 consecutive check-ins and earned ₦500 airtime!
-                  </p>
-                  {!phoneNumber && (
-                    <p className="text-orange-600 text-sm mt-2">
-                      Add your phone number above to receive your reward.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <span className="font-semibold text-blue-800">Keep Going!</span>
-                  </div>
-                  <p className="text-blue-700 text-sm">
-                    Complete {30 - (checkinStatus?.current_streak || 0)} more consecutive check-ins to unlock ₦500 airtime reward.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Notification Settings */}
-        <div className="mt-8">
-          <NotificationSettings />
-        </div>
-
-        {/* Quote Sources Management */}
-        <div className="mt-8">
-          <QuoteSourcesManager />
-        </div>
-
-        {/* Rewards History */}
-        {rewards.length > 0 && (
-          <Card className="mt-8 shadow-lg border-0 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-6 w-6 text-green-600" />
-                Rewards History
-              </CardTitle>
-              <CardDescription>
-                Your airtime rewards and payout history
-              </CardDescription>
-            </CardHeader>
+            </div>
             
-            <CardContent>
-              <div className="space-y-4">
-                {rewards.map((reward) => (
-                  <div 
-                    key={reward.id} 
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                  >
+            {checkinStatus && (
+              <div className="mt-6">
+                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                  <span>Progress to next reward</span>
+                  <span>{checkinStatus.currentStreak}/{checkinStatus.nextRewardAt} days</span>
+                </div>
+                <Progress 
+                  value={(checkinStatus.currentStreak / checkinStatus.nextRewardAt) * 100} 
+                  className="h-2"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Rewards */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-green-600" />
+              Rewards & Earnings
+            </CardTitle>
+            <CardDescription>
+              Total earnings: ₦{totalEarnings} 
+              {profile?.referralEarnings && profile.referralEarnings > 0 && ` (₦${profile.referralEarnings / 100} from referrals)`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {rewards.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No rewards yet. Complete 30 days of check-ins to earn ₦500!
+                </p>
+              ) : (
+                rewards.map((reward) => (
+                  <div key={reward.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
-                      <div className="font-semibold">₦{reward.amount} Airtime Reward</div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(reward.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                      <div className="font-medium">₦{reward.amount}</div>
+                      <div className="text-sm text-gray-500">{reward.description}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(reward.createdAt).toLocaleDateString()}
                       </div>
-                      {reward.phone_number && (
-                        <div className="text-sm text-gray-500">
-                          Sent to: {reward.phone_number}
-                        </div>
-                      )}
                     </div>
-                    
-                    <Badge 
-                      variant={
-                        reward.status === 'completed' ? 'default' :
-                        reward.status === 'processing' ? 'secondary' :
-                        reward.status === 'pending' ? 'outline' : 'destructive'
-                      }
-                      className={
-                        reward.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        reward.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                        reward.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''
-                      }
-                    >
-                      {reward.status.charAt(0).toUpperCase() + reward.status.slice(1)}
+                    <Badge variant={reward.status === 'pending' ? 'default' : 'secondary'}>
+                      {reward.status === 'pending' ? 'Ready' : 'Redeemed'}
                     </Badge>
                   </div>
-                ))}
+                ))
+              )}
+            </div>
+            
+            {canRedeem && (
+              <Button
+                onClick={() => redeemRewardsMutation.mutate()}
+                disabled={redeemRewardsMutation.isPending}
+                className="w-full mt-4 bg-green-600 hover:bg-green-700"
+              >
+                <Coins className="h-4 w-4 mr-2" />
+                {redeemRewardsMutation.isPending ? "Processing..." : `Redeem ₦${totalEarnings} Airtime`}
+              </Button>
+            )}
+            
+            {totalEarnings > 0 && !canRedeem && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  {!profile?.phone || !profile?.fullName 
+                    ? "Complete your profile to redeem rewards" 
+                    : `Need ₦${500 - totalEarnings} more to redeem`}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Referral Stats */}
+        {profile && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-indigo-600" />
+                Referral Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {profile.totalReferrals}
+                  </div>
+                  <div className="text-sm text-gray-500">Total Referrals</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    ₦{Math.floor((profile.referralEarnings || 0) / 100)}
+                  </div>
+                  <div className="text-sm text-gray-500">Referral Earnings</div>
+                </div>
               </div>
               
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-2">Payout Information</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Rewards are processed once per user per 30-day cycle</li>
-                  <li>• Airtime is sent directly to your registered phone number</li>
-                  <li>• Supported networks: MTN, Airtel, Glo, 9mobile</li>
-                  <li>• Processing typically takes 24-48 hours</li>
-                </ul>
+              <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                <p className="text-sm text-indigo-800">
+                  Your referral code: <strong>{profile.referralCode || 'BOOM000000'}</strong>
+                </p>
               </div>
             </CardContent>
           </Card>
