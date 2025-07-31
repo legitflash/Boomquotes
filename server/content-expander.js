@@ -80,6 +80,42 @@ const expandQuotesByCategory = {
     "Life is short, and it is up to you to make it sweet.",
     "Life is either a daring adventure or nothing at all."
   ],
+  success: [
+    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "The way to get started is to quit talking and begin doing.",
+    "Success is walking from failure to failure with no loss of enthusiasm.",
+    "Don't be afraid to give up the good to go for the great.",
+    "The only impossible journey is the one you never begin.",
+    "Success is the sum of small efforts repeated day in and day out.",
+    "The successful warrior is the average man with laser-like focus.",
+    "Success is not about the destination, it's about the journey.",
+    "You don't have to be great to get started, but you have to get started to be great.",
+    "Success is the result of preparation, hard work, and learning from failure."
+  ],
+  inspiration: [
+    "Be yourself; everyone else is already taken.",
+    "You are never too old to set another goal or to dream a new dream.",
+    "The future belongs to those who believe in the beauty of their dreams.",
+    "It is during our darkest moments that we must focus to see the light.",
+    "Believe you can and you're halfway there.",
+    "The only way to do great work is to love what you do.",
+    "Innovation distinguishes between a leader and a follower.",
+    "Your time is limited, don't waste it living someone else's life.",
+    "Stay hungry. Stay foolish.",
+    "The people who are crazy enough to think they can change the world are the ones who do."
+  ],
+  mindfulness: [
+    "The present moment is the only time over which we have dominion.",
+    "Mindfulness is a way of befriending ourselves and our experience.",
+    "Peace comes from within. Do not seek it without.",
+    "The best way to take care of the future is to take care of the present moment.",
+    "Wherever you are, be there totally.",
+    "Mindfulness is about being fully awake in our lives.",
+    "The mind is everything. What you think you become.",
+    "Be present in all things and thankful for all things.",
+    "Meditation is not evasion; it is a serene encounter with reality.",
+    "In today's rush, we all think too much, seek too much, want too much and forget about the joy of just being."
+  ],
   love: [
     "Love is not about how many days, months, or years you have been together.",
     "The best thing to hold onto in life is each other.",
@@ -683,24 +719,34 @@ const expandMessagesByCategory = {
 export function getExpandedContent(category, type = 'both', limit = 100) {
   let content = [];
   
+  // Map alternative category names to existing ones
+  const categoryMapping = {
+    'motivational': 'motivation',
+    'funny': 'wisdom',
+    'romance': 'love',
+    'inspirational': 'inspiration'
+  };
+  
+  const mappedCategory = categoryMapping[category] || category;
+  
   if (type === 'both' || type === 'quote') {
-    const quotes = expandQuotesByCategory[category] || [];
+    const quotes = expandQuotesByCategory[mappedCategory] || expandQuotesByCategory[category] || [];
     content.push(...quotes.slice(0, limit).map((text, index) => ({
-      id: `quote_${category}_${Date.now()}_${index}`,
+      id: `quote_${mappedCategory || category}_${Date.now()}_${index}`,
       text,
       author: 'Boomquotes Collection',
-      category,
+      category: mappedCategory || category,
       type: 'quote',
       source: 'Expanded Collection'
     })));
   }
   
   if (type === 'both' || type === 'message') {
-    const messages = expandMessagesByCategory[category] || [];
+    const messages = expandMessagesByCategory[mappedCategory] || expandMessagesByCategory[category] || [];
     content.push(...messages.slice(0, limit).map((text, index) => ({
-      id: `msg_${category}_${Date.now()}_${index}`,
+      id: `msg_${mappedCategory || category}_${Date.now()}_${index}`,
       text,
-      category,
+      category: mappedCategory || category,
       type: 'message',
       source: 'Expanded Collection'
     })));
