@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface Message {
   id: string;
   text: string;
-  author: string;
+  author?: string;
   category: string;
   source?: string;
 }
@@ -123,8 +123,10 @@ export default function MessagesPage() {
 
   // Filter messages based on search (category filtering is now handled by API)
   const filteredMessages = messages.filter((message) => {
-    const matchesSearch = message.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (message.source && message.source.toLowerCase().includes(searchTerm.toLowerCase()));
+    const messageText = message.text || '';
+    const messageSource = message.source || '';
+    const matchesSearch = messageText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         messageSource.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -200,9 +202,11 @@ export default function MessagesPage() {
     }
     ctx.fillText(line, canvas.width / 2, y);
 
-    // Author
-    ctx.font = '24px Arial';
-    ctx.fillText(`- ${message.author}`, canvas.width / 2, y + 60);
+    // Author (only if exists)
+    if (message.author) {
+      ctx.font = '24px Arial';
+      ctx.fillText(`- ${message.author}`, canvas.width / 2, y + 60);
+    }
 
     // Download
     const link = document.createElement('a');
