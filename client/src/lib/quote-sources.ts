@@ -21,10 +21,10 @@ export class FamousQuotesAPI {
 
     const response = await fetch(this.BASE_URL, { headers });
     if (!response.ok) throw new Error("API Ninjas failed");
-    
+
     const data = await response.json();
     if (!data || data.length === 0) throw new Error("No quotes from API Ninjas");
-    
+
     const quote = data[0];
     return {
       content: quote.quote,
@@ -42,7 +42,7 @@ export class FamousQuotesAPI {
 
     const response = await fetch(`${this.BASE_URL}?category=${category}`, { headers });
     if (!response.ok) throw new Error("API Ninjas category failed");
-    
+
     const data = await response.json();
     return data.map((quote: any) => ({
       content: quote.quote,
@@ -60,7 +60,7 @@ export class QuotableExtendedAPI {
   static async getAuthorQuotes(author: string): Promise<ExternalQuote[]> {
     const response = await fetch(`${this.BASE_URL}/quotes?author=${encodeURIComponent(author)}&limit=10`);
     if (!response.ok) throw new Error("Quotable author search failed");
-    
+
     const data = await response.json();
     return (data.results || []).map((quote: any) => ({
       content: quote.content,
@@ -73,7 +73,7 @@ export class QuotableExtendedAPI {
   static async searchQuotes(query: string): Promise<ExternalQuote[]> {
     const response = await fetch(`${this.BASE_URL}/search/quotes?query=${encodeURIComponent(query)}&limit=10`);
     if (!response.ok) throw new Error("Quotable search failed");
-    
+
     const data = await response.json();
     return (data.results || []).map((quote: any) => ({
       content: quote.content,
@@ -85,18 +85,29 @@ export class QuotableExtendedAPI {
 
   static async getPopularQuotes(): Promise<ExternalQuote[]> {
     try {
-      const response = await fetch(`${this.BASE_URL}/quotes?sortBy=datePopular&limit=20`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.BASE_URL}/quotes?sortBy=datePopular&limit=20`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         console.warn('Quotable API response not ok:', response.status);
         return [];
       }
-      
+
       const data = await response.json();
       if (!data.results || !Array.isArray(data.results)) {
         console.warn('Quotable API returned invalid data structure');
         return [];
       }
-      
+
       return data.results.map((quote: any) => ({
         content: quote.content,
         author: quote.author,
@@ -117,7 +128,7 @@ export class GoQuotesAPI {
   static async getRandomQuote(): Promise<ExternalQuote> {
     const response = await fetch(`${this.BASE_URL}/random`);
     if (!response.ok) throw new Error("GoQuotes API failed");
-    
+
     const data = await response.json();
     return {
       content: data.text,
@@ -130,7 +141,7 @@ export class GoQuotesAPI {
   static async getQuotesByTag(tag: string): Promise<ExternalQuote[]> {
     const response = await fetch(`${this.BASE_URL}/quotes/tag?name=${tag}`);
     if (!response.ok) throw new Error("GoQuotes tag search failed");
-    
+
     const data = await response.json();
     return (data.quotes || []).slice(0, 10).map((quote: any) => ({
       content: quote.text,
@@ -148,7 +159,7 @@ export class StoicQuotesAPI {
   static async getRandomQuote(): Promise<ExternalQuote> {
     const response = await fetch(`${this.BASE_URL}/random`);
     if (!response.ok) throw new Error("Stoic Quotes API failed");
-    
+
     const data = await response.json();
     return {
       content: data.text,
@@ -171,10 +182,10 @@ export class QuoteAggregator {
 
   static async getRandomQuoteFromMultipleSources(): Promise<ExternalQuote> {
     const enabledSources = this.sources.filter(s => s.enabled);
-    
+
     // Randomize source order for variety
     const shuffledSources = enabledSources.sort(() => Math.random() - 0.5);
-    
+
     for (const source of shuffledSources) {
       try {
         switch (source.name) {
@@ -221,7 +232,7 @@ export class QuoteAggregator {
 
   static async searchAcrossAllSources(query: string): Promise<ExternalQuote[]> {
     const results: ExternalQuote[] = [];
-    
+
     // Search in Quotable
     try {
       const quotableResults = await QuotableExtendedAPI.searchQuotes(query);
