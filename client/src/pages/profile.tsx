@@ -130,17 +130,12 @@ export default function Profile() {
       return;
     }
 
-    if (!phoneNumber.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please enter your phone number.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Check if Nigerian phone number is provided
+    const isNigerianNumber = phoneNumber.trim() && phoneNumber.match(/^\+234[789][01]\d{8}$/);
+    const hasPhoneNumber = phoneNumber.trim().length > 0;
 
-    // Validate Nigerian phone number
-    if (!phoneNumber.match(/^\+234[789][01]\d{8}$/)) {
+    // If phone number is provided but not Nigerian format, show warning
+    if (hasPhoneNumber && !isNigerianNumber) {
       setShowWarning(true);
       return;
     }
@@ -154,7 +149,10 @@ export default function Profile() {
       return;
     }
 
-    saveProfileMutation.mutate({ fullName: fullName.trim(), phone: phoneNumber.trim() });
+    saveProfileMutation.mutate({ 
+      fullName: fullName.trim(), 
+      phone: phoneNumber.trim() || undefined 
+    });
   };
 
   const totalEarnings = rewards.reduce((sum, reward) => 
@@ -190,30 +188,29 @@ export default function Profile() {
           <Alert className="mb-6 border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Important:</strong> Please enter your correct phone number and full name. 
-              Once saved, these details cannot be changed and will be used for all airtime rewards.
+              <strong>Important:</strong> The phone number format appears to be non-Nigerian. 
+              Only Nigerian phone numbers (+234XXXXXXXXXX) are eligible for airtime rewards. 
+              You can save without a phone number if you're not from Nigeria.
               <div className="mt-2">
                 <Button
                   size="sm"
                   onClick={() => {
-                    if (fullName.trim() && phoneNumber.trim()) {
-                      saveProfileMutation.mutate({ 
-                        fullName: fullName.trim(), 
-                        phone: phoneNumber.trim() 
-                      });
-                    }
+                    saveProfileMutation.mutate({ 
+                      fullName: fullName.trim(), 
+                      phone: undefined 
+                    });
                     setShowWarning(false);
                   }}
                   className="mr-2"
                 >
-                  Confirm & Save
+                  Save Without Phone
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setShowWarning(false)}
                 >
-                  Review Details
+                  Review Phone Number
                 </Button>
               </div>
             </AlertDescription>
@@ -254,17 +251,17 @@ export default function Profile() {
             </div>
 
             <div>
-              <Label htmlFor="phone">Nigerian Phone Number *</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
-                placeholder="+234XXXXXXXXXX"
+                placeholder="+234XXXXXXXXXX (Required for Nigerians)"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={profile?.profileLocked}
               />
               <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                 <Phone className="h-3 w-3" />
-                Required for airtime rewards
+                Required for Nigerian users to receive airtime rewards. Optional for global users.
               </p>
             </div>
 

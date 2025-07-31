@@ -43,20 +43,20 @@ export default function Bookmarks() {
     }
   });
 
-  const filteredFavorites = favorites.filter(favorite => 
-    favorite.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    favorite.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    favorite.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredFavorites = favorites.filter(favorite => {
+    if (!favorite || !favorite.quoteData) return false;
+    const quoteData = favorite.quoteData as any;
+    if (!quoteData.text || !quoteData.author || !quoteData.category) return false;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      quoteData.text.toLowerCase().includes(query) ||
+      quoteData.author.toLowerCase().includes(query) ||
+      quoteData.category.toLowerCase().includes(query)
+    );
+  });
 
-  const handleShare = (favorite: Favorite) => {
-    const quote: Quote = {
-      id: favorite.quoteId,
-      text: favorite.text,
-      author: favorite.author,
-      category: favorite.category,
-      source: favorite.source || 'builtin'
-    };
+  const handleShare = (quote: Quote) => {
     setSelectedQuote(quote);
     setShareModalOpen(true);
   };
@@ -127,7 +127,7 @@ export default function Bookmarks() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {new Set(favorites.map(f => f.category)).size}
+                  {new Set(favorites.map(f => (f.quoteData as any)?.category).filter(Boolean)).size}
                 </div>
                 <div className="text-sm text-gray-500">Categories</div>
               </div>
@@ -137,7 +137,7 @@ export default function Bookmarks() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {new Set(favorites.map(f => f.author)).size}
+                  {new Set(favorites.map(f => (f.quoteData as any)?.author).filter(Boolean)).size}
                 </div>
                 <div className="text-sm text-gray-500">Authors</div>
               </div>
@@ -161,7 +161,7 @@ export default function Bookmarks() {
                   }
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => window.history.back()}>
+                  <Button onClick={() => window.location.href = "/"}>
                     Discover Quotes
                   </Button>
                 )}
@@ -171,20 +171,24 @@ export default function Bookmarks() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredFavorites.map((favorite) => {
+              const quoteData = favorite.quoteData as any;
               const quote: Quote = {
                 id: favorite.quoteId,
-                text: favorite.text,
-                author: favorite.author,
-                category: favorite.category,
-                source: favorite.source || 'builtin'
+                text: quoteData.text,
+                author: quoteData.author,
+                category: quoteData.category,
+                source: quoteData.source || 'builtin'
               };
 
               return (
                 <QuoteCard
                   key={favorite.id}
                   quote={quote}
-                  onShare={handleShare}
-                  onToggleFavorite={handleToggleFavorite}
+                  onShare={(q) => {
+                    setSelectedQuote(q);
+                    setShareModalOpen(true);
+                  }}
+                  onToggleFavorite={() => handleRemove(favorite.quoteId)}
                   isFavorite={true}
                 />
               );

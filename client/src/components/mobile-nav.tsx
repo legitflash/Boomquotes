@@ -71,13 +71,6 @@ export function MobileNav({ isOpen, onClose, navItems, currentLocation }: Mobile
             <div className="border-t border-neutral-200 pt-6 space-y-2">
               <Button
                 variant="ghost"
-                className="w-full justify-start h-12 text-neutral-600"
-              >
-                <User className="mr-3 h-4 w-4" />
-                Profile Settings
-              </Button>
-              <Button
-                variant="ghost"
                 className="w-full justify-start h-12 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleSignOut}
               >
