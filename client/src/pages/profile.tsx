@@ -254,14 +254,14 @@ export default function Profile() {
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
-                placeholder="+234XXXXXXXXXX (Required for Nigerians)"
+                placeholder="+234, +254, +233, +27, +256, +255... (Required for African users)"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={profile?.profileLocked}
               />
               <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                 <Phone className="h-3 w-3" />
-                Required for Nigerian users to receive airtime rewards. Optional for global users.
+                Required for African users to receive airtime rewards. Supported: Nigeria, Kenya, Ghana, South Africa, Uganda, Tanzania, and more.
               </p>
             </div>
 
