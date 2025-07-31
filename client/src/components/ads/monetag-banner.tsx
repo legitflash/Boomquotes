@@ -39,23 +39,22 @@ export function MonetagBanner({ position = 'bottom', size = 'responsive' }: Mone
   }, [position, size]);
 
   const bannerSizes = {
-    mobile: 'h-16',
-    desktop: 'h-24',
-    responsive: 'h-16 md:h-24'
+    mobile: 'h-12',
+    desktop: 'h-16',
+    responsive: 'h-12 md:h-16'
   };
 
   const positionClasses = position === 'top' 
     ? 'top-0 border-b' 
-    : 'bottom-0 border-t mb-16'; // mb-16 to account for social bar
+    : 'bottom-0 border-t mb-12'; // mb-12 to account for social bar
 
   return (
     <div className={`fixed left-0 right-0 z-30 bg-gray-50 ${positionClasses}`}>
-      {/* Fallback banner for development/testing */}
+      {/* Fallback banner for development/testing - minimal and non-intrusive */}
       {!isLoaded && (
-        <div className={`w-full ${bannerSizes[size]} flex items-center justify-center bg-gradient-to-r from-green-400 to-blue-500`}>
-          <div className="text-center text-white">
-            <p className="text-sm font-medium">📱 Download Our App for Better Experience!</p>
-            <p className="text-xs opacity-80">Get exclusive features and faster loading</p>
+        <div className={`w-full ${bannerSizes[size]} flex items-center justify-center bg-gray-100 border-t border-gray-200`}>
+          <div className="text-center text-gray-600">
+            <p className="text-xs">Ad Space</p>
           </div>
         </div>
       )}
@@ -63,7 +62,7 @@ export function MonetagBanner({ position = 'bottom', size = 'responsive' }: Mone
       {/* Monetag Banner will be inserted here */}
       <div id="monetag-banner" className={`monetag-banner ${bannerSizes[size]} w-full`} />
       
-      <style jsx>{`
+      <style>{`
         .monetag-banner {
           display: flex;
           align-items: center;

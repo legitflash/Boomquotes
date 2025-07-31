@@ -85,7 +85,7 @@ export function AdsterraPushAd({ position = 'top-right', delay = 3000 }: Adsterr
       {/* Adsterra Push Ad will be inserted here */}
       <div id="adsterra-push-ad" className="adsterra-push-ad" />
       
-      <style jsx>{`
+      <style>{`
         @keyframes slide-in {
           from {
             transform: translateX(100%);

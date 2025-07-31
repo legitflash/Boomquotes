@@ -155,7 +155,7 @@ export function MonetagInterstitial({ onShow, onClose, trigger = 'pageload' }: M
       {/* Monetag Interstitial will be handled by script */}
       <div id="monetag-interstitial" />
       
-      <style jsx>{`
+      <style>{`
         @keyframes scale-in {
           from {
             transform: scale(0.9);

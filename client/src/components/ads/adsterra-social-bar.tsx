@@ -43,21 +43,21 @@ export function AdsterraSocialBar({ onAdClick, visible = true }: AdsterraSocialB
 
   return (
     <div className="adsterra-social-bar-container">
-      {/* Fallback social bar for development/testing */}
+      {/* Fallback social bar for development/testing - minimal */}
       {!isLoaded && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-2 shadow-sm">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium">💰 Earn rewards with daily check-ins!</span>
+            <div className="flex items-center space-x-3">
+              <span className="text-xs text-gray-600">Daily Check-in Available</span>
               <button 
                 onClick={onAdClick}
-                className="bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
               >
-                Check In Now
+                Check In
               </button>
             </div>
             <button 
-              className="text-white/80 hover:text-white text-lg"
+              className="text-gray-400 hover:text-gray-600 text-sm"
               onClick={() => {/* Handle close */}}
             >
               ×
@@ -69,14 +69,14 @@ export function AdsterraSocialBar({ onAdClick, visible = true }: AdsterraSocialB
       {/* Adsterra Social Bar will be inserted here */}
       <div id="adsterra-social-bar" className="adsterra-social-bar" />
       
-      <style jsx>{`
+      <style>{`
         .adsterra-social-bar {
           position: fixed;
           bottom: 0;
           left: 0;
           right: 0;
           z-index: 1000;
-          min-height: 60px;
+          min-height: 48px;
         }
         
         .adsterra-social-bar-container {
@@ -86,7 +86,7 @@ export function AdsterraSocialBar({ onAdClick, visible = true }: AdsterraSocialB
         /* Mobile optimizations */
         @media (max-width: 768px) {
           .adsterra-social-bar {
-            min-height: 50px;
+            min-height: 40px;
           }
         }
       `}</style>

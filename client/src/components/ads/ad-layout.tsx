@@ -83,30 +83,22 @@ export function AdLayout({
         delay={5000}
       />
       
-      <style jsx>{`
+      <style>{`
         .ad-layout {
           position: relative;
           min-height: 100vh;
         }
         
         .content-wrapper {
-          padding-bottom: 140px; /* Space for banner + social bar */
-          min-height: calc(100vh - 140px);
+          padding-bottom: 120px; /* Space for banner + social bar */
+          min-height: calc(100vh - 120px);
         }
         
         /* Mobile optimizations */
         @media (max-width: 768px) {
           .content-wrapper {
-            padding-bottom: 120px; /* Reduced spacing for mobile */
-            min-height: calc(100vh - 120px);
-          }
-        }
-        
-        /* Ensure content doesn't overlap with ads */
-        @media (min-height: 600px) {
-          .content-wrapper {
-            min-height: calc(100vh - 160px);
-            padding-bottom: 160px;
+            padding-bottom: 100px; /* Reduced spacing for mobile */
+            min-height: calc(100vh - 100px);
           }
         }
       `}</style>

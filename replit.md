@@ -19,6 +19,7 @@ Messages Page: Dedicated messages section with 12 categories including good morn
 Quote Preview: Shows generated quotes preview before sharing functionality
 Content Population: COMPLETED - Over 100+ quotes and messages per category now implemented with comprehensive databases
 Animated Transitions: Smooth category transitions with framer-motion animations for enhanced UX
+Ad Integration: COMPLETED - Comprehensive Adsterra and Monetag ad system integrated across all pages with mobile/desktop optimization
 
 ## System Architecture
 
@@ -133,3 +134,18 @@ Animated Transitions: Smooth category transitions with framer-motion animations 
 - **`migrations/`**: Database migration files
 
 The application uses a monorepo structure with shared TypeScript configuration and path aliases for clean imports across frontend and backend code.
+
+## Ad Monetization System
+
+### Comprehensive Ad Integration (COMPLETED)
+- **Adsterra Social Bar Ads**: Positioned at bottom for check-in functionality with direct navigation to daily check-in page
+- **Adsterra Push Ads**: Corner-positioned ads (top-right desktop, bottom-right mobile) with 3-second delay
+- **Monetag Banner Ads**: Bottom placement above social bar, minimal height (h-12 mobile, h-16 desktop)
+- **Monetag Interstitial Ads**: First daily visit trigger with localStorage tracking, premium upgrade focus
+- **Monetag Push Notifications**: Browser notification system with daily quotes and reward alerts
+
+### Ad Layout System
+- **AdLayout Component**: Centralized ad management wrapper with mobile/desktop responsive design
+- **Non-intrusive Design**: Minimal placeholders during development, proper content spacing (100-120px bottom padding)
+- **Smart Positioning**: Z-index management (social bar: 50, banner: 30, push: 40, interstitial: 50)
+- **Performance Optimized**: Script loading with fallbacks, localStorage-based frequency capping
