@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
-// African countries and their operators supported by Reloadly
-export const AFRICAN_COUNTRIES = {
+// Global countries and their operators supported by Reloadly
+export const SUPPORTED_COUNTRIES = {
   'NG': { // Nigeria
     name: 'Nigeria',
     code: '+234',
@@ -57,7 +57,138 @@ export const AFRICAN_COUNTRIES = {
     currency: 'ETB',
     defaultAmount: 50,
     operators: ['Ethio Telecom']
+  },
+  // Asian Countries
+  'IN': { // India
+    name: 'India',
+    code: '+91',
+    currency: 'INR',
+    defaultAmount: 50,
+    operators: ['Airtel India', 'Vodafone Idea', 'Jio', 'BSNL']
+  },
+  'PH': { // Philippines
+    name: 'Philippines',
+    code: '+63',
+    currency: 'PHP',
+    defaultAmount: 50,
+    operators: ['Smart', 'Globe', 'Sun Cellular']
+  },
+  'BD': { // Bangladesh
+    name: 'Bangladesh',
+    code: '+880',
+    currency: 'BDT',
+    defaultAmount: 50,
+    operators: ['Grameenphone', 'Robi', 'Banglalink']
+  },
+  'PK': { // Pakistan
+    name: 'Pakistan',
+    code: '+92',
+    currency: 'PKR',
+    defaultAmount: 100,
+    operators: ['Jazz', 'Telenor', 'Zong', 'Ufone']
+  },
+  'ID': { // Indonesia
+    name: 'Indonesia',
+    code: '+62',
+    currency: 'IDR',
+    defaultAmount: 10000,
+    operators: ['Telkomsel', 'Indosat', 'XL Axiata']
+  },
+  'MY': { // Malaysia
+    name: 'Malaysia',
+    code: '+60',
+    currency: 'MYR',
+    defaultAmount: 5,
+    operators: ['Maxis', 'Celcom', 'Digi']
+  },
+  'TH': { // Thailand
+    name: 'Thailand',
+    code: '+66',
+    currency: 'THB',
+    defaultAmount: 30,
+    operators: ['AIS', 'DTAC', 'TrueMove']
+  },
+  'VN': { // Vietnam
+    name: 'Vietnam',
+    code: '+84',
+    currency: 'VND',
+    defaultAmount: 50000,
+    operators: ['Viettel', 'Mobifone', 'Vinaphone']
+  },
+  // European Countries
+  'RO': { // Romania
+    name: 'Romania',
+    code: '+40',
+    currency: 'RON',
+    defaultAmount: 5,
+    operators: ['Orange Romania', 'Vodafone Romania', 'Telekom Romania']
+  },
+  'PL': { // Poland
+    name: 'Poland',
+    code: '+48',
+    currency: 'PLN',
+    defaultAmount: 5,
+    operators: ['Orange Polska', 'Play', 'Plus', 'T-Mobile Polska']
+  },
+  'BG': { // Bulgaria
+    name: 'Bulgaria',
+    code: '+359',
+    currency: 'BGN',
+    defaultAmount: 5,
+    operators: ['A1 Bulgaria', 'Vivacom', 'Telenor Bulgaria']
+  },
+  'UA': { // Ukraine
+    name: 'Ukraine',
+    code: '+380',
+    currency: 'UAH',
+    defaultAmount: 50,
+    operators: ['Kyivstar', 'Vodafone Ukraine', 'lifecell']
+  },
+  // Latin America
+  'MX': { // Mexico
+    name: 'Mexico',
+    code: '+52',
+    currency: 'MXN',
+    defaultAmount: 20,
+    operators: ['Telcel', 'AT&T Mexico', 'Movistar Mexico']
+  },
+  'BR': { // Brazil
+    name: 'Brazil',
+    code: '+55',
+    currency: 'BRL',
+    defaultAmount: 10,
+    operators: ['Vivo', 'Claro', 'TIM', 'Oi']
+  },
+  'AR': { // Argentina
+    name: 'Argentina',
+    code: '+54',
+    currency: 'ARS',
+    defaultAmount: 100,
+    operators: ['Claro Argentina', 'Movistar Argentina', 'Personal']
+  },
+  'CO': { // Colombia
+    name: 'Colombia',
+    code: '+57',
+    currency: 'COP',
+    defaultAmount: 2000,
+    operators: ['Claro Colombia', 'Movistar Colombia', 'Tigo']
+  },
+  // Middle East
+  'AE': { // UAE
+    name: 'United Arab Emirates',
+    code: '+971',
+    currency: 'AED',
+    defaultAmount: 5,
+    operators: ['Etisalat', 'du']
+  },
+  'SA': { // Saudi Arabia
+    name: 'Saudi Arabia',
+    code: '+966',
+    currency: 'SAR',
+    defaultAmount: 10,
+    operators: ['STC', 'Mobily', 'Zain Saudi Arabia']
   }
+}
 };
 
 export class ReloadlyService {
@@ -115,7 +246,7 @@ export class ReloadlyService {
     // Remove any non-numeric characters except +
     const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
     
-    for (const [countryCode, config] of Object.entries(AFRICAN_COUNTRIES)) {
+    for (const [countryCode, config] of Object.entries(SUPPORTED_COUNTRIES)) {
       if (cleanPhone.startsWith(config.code)) {
         return countryCode;
       }
@@ -179,7 +310,7 @@ export class ReloadlyService {
       throw new Error('Phone number from unsupported country');
     }
 
-    const countryConfig = AFRICAN_COUNTRIES[countryCode as keyof typeof AFRICAN_COUNTRIES];
+    const countryConfig = SUPPORTED_COUNTRIES[countryCode as keyof typeof SUPPORTED_COUNTRIES];
     const amount = customAmount || countryConfig.defaultAmount;
 
     try {
@@ -282,7 +413,7 @@ export class ReloadlyService {
     const countryCode = this.detectCountryFromPhone(phoneNumber);
     if (!countryCode) return 0;
     
-    const config = AFRICAN_COUNTRIES[countryCode as keyof typeof AFRICAN_COUNTRIES];
+    const config = SUPPORTED_COUNTRIES[countryCode as keyof typeof SUPPORTED_COUNTRIES];
     return config.defaultAmount;
   }
 
@@ -293,7 +424,7 @@ export class ReloadlyService {
     
     return {
       code: countryCode,
-      ...AFRICAN_COUNTRIES[countryCode as keyof typeof AFRICAN_COUNTRIES]
+      ...SUPPORTED_COUNTRIES[countryCode as keyof typeof SUPPORTED_COUNTRIES]
     };
   }
 }

@@ -261,7 +261,7 @@ export default function Profile() {
               />
               <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                 <Phone className="h-3 w-3" />
-                Required for African users to receive airtime rewards. Supported: Nigeria, Kenya, Ghana, South Africa, Uganda, Tanzania, and more.
+                Required for airtime rewards. Supported globally: Africa, Asia, Europe, Latin America, Middle East (150+ countries).
               </p>
             </div>
 
