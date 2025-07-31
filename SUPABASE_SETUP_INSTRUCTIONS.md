@@ -1,68 +1,56 @@
-# Supabase Database Setup for Boomquotes
+# Supabase Setup Instructions for Boomquotes
 
-## Quick Setup Instructions
+## Step 1: Create Supabase Project
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Choose a project name: "boomquotes"
+3. Set a strong database password and save it securely
+4. Wait for the project to be created (2-3 minutes)
 
-1. **Open your Supabase Dashboard**
-   - Go to https://supabase.com/dashboard
-   - Select your project: `qkcqmkecckojkvmxkmzq`
+## Step 2: Get Database Connection URL
+1. In your Supabase dashboard, click "Connect" in the top toolbar
+2. Go to "Connection string" → "Transaction pooler"
+3. Copy the URI value (it looks like: `postgresql://postgres.xxxxx:password@aws-0-region.pooler.supabase.com:6543/postgres`)
+4. Replace `[YOUR-PASSWORD]` with your actual database password
 
-2. **Run the SQL Setup**
-   - Go to the "SQL Editor" tab
-   - Create a new query
-   - Copy and paste the entire contents of `supabase_setup.sql`
-   - Click "Run" to execute all commands
+## Step 3: Set up Database Schema
+1. In Supabase dashboard, go to "SQL Editor"
+2. Copy the entire contents from `supabase_schema.sql` file in this project
+3. Paste it into the SQL Editor and click "Run"
+4. This will create all tables, functions, triggers, and security policies
 
-## What This Creates
-
-### Core Tables
-- **user_profiles** - User information including Nigerian status
-- **quotes** - Inspirational quotes with categories
-- **favorites** - User's saved quotes
-- **daily_checkins** - Track 5-click daily check-ins with 2-minute intervals
-- **checkin_streaks** - User streak tracking
-- **rewards** - Airtime rewards for 30-day streaks (Nigerians only)
-- **reward_claims** - Track all reward payouts
-
-### Daily Check-in Logic
-- Users must click 10 times with 1-minute cooldowns between clicks
-- Each click triggers an ad view
-- After 10 clicks, the daily check-in is marked complete
-- 30 consecutive days = ₦500 airtime reward for Nigerian users
-
-### Key Functions Created
-- `handle_checkin_click(user_id)` - Processes each click with cooldown
-- `get_checkin_status(user_id)` - Gets current check-in status
-- `update_user_streak(user_id)` - Updates streak counters
-- `check_reward_eligibility(user_id)` - Creates rewards for 30-day streaks
-
-### Row Level Security
-- All tables have RLS enabled
-- Users can only access their own data
-- Quotes are publicly readable for authenticated users
-
-## Testing the Setup
-
-After running the SQL, you can test with these queries:
-
-```sql
--- Check if tables were created
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('user_profiles', 'daily_checkins', 'rewards');
-
--- Test check-in function (replace with real user ID)
-SELECT handle_checkin_click('your-user-uuid-here');
-
--- Check check-in status
-SELECT get_checkin_status('your-user-uuid-here');
+## Step 4: Configure Environment Variables
+Add this environment variable to your Replit project:
+```
+DATABASE_URL=your_supabase_connection_string_here
 ```
 
-## Next Steps
+## Step 5: Test the Connection
+1. Restart the application
+2. The app should now connect to your Supabase database
+3. Try creating an account and using the check-in system
 
-1. Run the SQL setup in Supabase
-2. Update your application to use these new database functions
-3. Implement the ad integration for each click
-4. Set up airtime payout system for Nigerian users
-5. Test the complete flow from registration to reward claim
+## Step 6: Deploy to Vercel
+1. Connect your Replit project to GitHub
+2. Import the project to Vercel
+3. Add the DATABASE_URL environment variable in Vercel settings
+4. Deploy the application
 
-The database is now ready to handle the full check-in system with ads and rewards!
+## Database Tables Created:
+- `user_profiles` - User account information with referral codes
+- `quotes` - Inspirational quotes database
+- `favorites` - User bookmarked quotes
+- `check_ins` - Daily check-in tracking with button clicks
+- `checkin_streaks` - User streak statistics
+- `airtime_rewards` - ₦500 rewards and referral earnings
+- `referrals` - Referral tracking and validation
+
+## Key Features:
+- Automatic user profile creation on signup
+- Referral code generation (BOOM + 6 digits)
+- Streak tracking with automatic reward generation
+- Referral validation (₦100 after 10-day minimum)
+- Combined withdrawal system (check-in + referral earnings)
+- Row Level Security (RLS) for data protection
+
+## Security:
+All tables have Row Level Security enabled, ensuring users can only access their own data. The database includes proper indexes for performance and triggers for automatic data management.
