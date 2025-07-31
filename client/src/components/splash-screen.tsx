@@ -29,7 +29,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         <div className="mb-6">
           <Quote className="h-16 w-16 mx-auto mb-4 animate-bounce" />
         </div>
-        <h1 className="text-4xl font-bold mb-2">BoomWheel</h1>
+        <h1 className="text-4xl font-bold mb-2">Boomquotes</h1>
         <p className="text-xl opacity-90">Daily Inspiration Awaits</p>
         <div className="mt-8">
           <div className="w-12 h-1 bg-white rounded-full mx-auto animate-pulse" />

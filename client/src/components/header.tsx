@@ -37,7 +37,7 @@ export function Header() {
               <Link href="/">
                 <div className="flex-shrink-0 flex items-center cursor-pointer">
                   <Quote className="text-primary text-2xl mr-3" />
-                  <h1 className="text-2xl font-bold text-primary">BoomWheel</h1>
+                  <h1 className="text-2xl font-bold text-primary">Boomquotes</h1>
                 </div>
               </Link>
             </div>

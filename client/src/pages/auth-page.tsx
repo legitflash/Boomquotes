@@ -63,7 +63,7 @@ export default function AuthPage() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <Quote className="text-primary text-3xl" />
-              <h1 className="text-4xl font-bold text-primary">BoomWheel</h1>
+              <h1 className="text-4xl font-bold text-primary">Boomquotes</h1>
             </div>
             <h2 className="text-3xl font-light text-gray-800">
               Daily Inspiration & Rewards
@@ -110,7 +110,7 @@ export default function AuthPage() {
               <div className="lg:hidden mb-4">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Quote className="text-primary text-2xl" />
-                  <h1 className="text-2xl font-bold text-primary">BoomWheel</h1>
+                  <h1 className="text-2xl font-bold text-primary">Boomquotes</h1>
                 </div>
                 <p className="text-sm text-gray-600">Daily inspiration & rewards</p>
               </div>

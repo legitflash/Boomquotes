@@ -1,8 +1,8 @@
-# BoomWheel - Quote Application
+# Boomquotes - Quote Application
 
 ## Overview
 
-BoomWheel is a modern full-stack web application for discovering, sharing, and managing inspirational quotes with integrated user authentication and Nigerian-specific rewards system. The application features a React frontend with Supabase authentication, designed for mobile-first usage and deployment on Vercel. Users can browse quotes by category, complete daily check-ins, earn airtime rewards, and share quotes across social platforms.
+Boomquotes is a modern full-stack web application for discovering, sharing, and managing inspirational quotes with integrated user authentication and rewards system. The application features a React frontend with Supabase authentication, designed for mobile-first usage and deployment on Vercel. Users can browse quotes by category, complete daily check-ins, earn airtime rewards, and share quotes across social platforms.
 
 ## User Preferences
 
